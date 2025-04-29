@@ -7,10 +7,22 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <audio id="start-music" src="Chase in the Shadows.mp3" loop preload="auto"></audio>
+
+    <div id="fullscreen-prompt" class="hidden">
+        <p>For the best experience, please enter fullscreen.</p>
+        <button id="enter-fullscreen-button">Enter Fullscreen</button>
+    </div>
+
+    <div id="particles-container"></div>
+
+    <!-- Add Transition Overlay -->
+    <div id="transition-overlay"></div>
+
     <div id="game-container">
-        <div id="start-screen">
-            <h1>200 Miles to Nevada</h1>
-            <button id="start-button">START</button>
+        <div id="start-screen" class="glitch-container">
+            <h1 class="glitch-effect" data-text="200 Miles to Nevada">200 Miles to Nevada</h1>
+            <button id="start-button">> START</button>
         </div>
 
         <div id="video-player" style="display: none;">
@@ -23,8 +35,30 @@
         </div>
 
         <div id="game-screen" style="display: none;">
-            <!-- Main game content will go here -->
-            <p>Game Started!</p> 
+            <div id="game-video-container">
+                <video id="game-video" loop muted>
+                    <source src="Generated File April 29, 2025 - 3_20PM.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div id="game-ui-overlay">
+                    <div id="stats-container">
+                        <div id="energy-value-item" class="stat-item">
+                            <span id="energy-value">100%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span id="miles-value">200</span>
+                        </div>
+                        <div id="boredom-value-item" class="stat-item">
+                            <span id="boredom-value">0%</span>
+                        </div>
+                        <div id="mile-marker" class="hidden">Mile Marker <span id="marker-value">0</span></div>
+                    </div>
+                    <div id="action-container">
+                        <button id="brake-check-button">BRAKE CHECK</button>
+                        <button id="blast-button" class="hidden">BLAST</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
