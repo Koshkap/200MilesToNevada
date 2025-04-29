@@ -35,65 +35,70 @@ body {
 }
 
 #start-screen h1 {
-    color: #eee;
-    text-shadow: 0 0 8px rgba(255, 0, 0, 0.7), 0 0 12px rgba(0, 0, 255, 0.7); /* Uncanny text shadow */
+    color: #0f0; /* Bright green console color */
+    text-shadow: 0 0 8px #0f0; /* Green glow */
     font-size: 3em;
    /* margin-bottom: 50px; Removed margin as flexbox handles spacing/positioning now */
    position: relative; /* Ensure title is above the button if overlapping */
    z-index: 1;
+   margin-bottom: 20px; /* Add space between title and button */
 }
 
 
 #start-button {
     position: absolute;
-    bottom: 60px; /* Moved up slightly */
-    left: 40px; /* Position from left */
-    padding: 15px 30px;
+    bottom: 80px; /* Adjusted position */
+    left: 60px; /* Indented slightly */
+   /* padding: 15px 30px; Removed padding */
     font-size: 3em; /* Same size as title */
-    color: #f0f0f0; /* Retro white */
-    background-color: rgba(20, 20, 20, 0.6); /* Dark semi-transparent background */
-    border: none; /* Removed border */
-    border-radius: 5px;
+    color: #0f0; /* Bright green console color */
+    background-color: transparent; /* Removed background */
+    border: none; /* Ensure no border */
+   /* border-radius: 5px; Removed border-radius */
     cursor: pointer;
     font-family: inherit; /* Use body's retro font */
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0ff; /* White/cyan glow */
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3); /* Subtle outer/inner glow */
-    transition: all 0.1s ease-in-out;
-    animation: glitch-glow 1.5s infinite alternate; /* Apply animation */
+    text-shadow: 0 0 8px #0f0; /* Green glow */
+   /* box-shadow: 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3); Removed box-shadow */
+    transition: color 0.1s ease-in-out, text-shadow 0.1s ease-in-out; /* Smoother transition */
+   /* animation: glitch-glow 1.5s infinite alternate; Removed glitch animation */
     z-index: 2; /* Ensure button is clickable if title is large */
+    display: inline-block; /* Needed for pseudo-element positioning */
+}
+
+/* Console prompt */
+#start-button::before {
+    content: '> ';
+}
+
+/* Blinking cursor effect */
+#start-button::after {
+    content: '_';
+    opacity: 0;
+    animation: blink 1s step-start 0s infinite;
+    margin-left: 5px; /* Space between text and cursor */
+    font-weight: bold;
+    position: relative;
+    top: -0.05em; /* Adjust vertical alignment */
 }
 
 #start-button:hover {
-    color: #fff;
-    background-color: rgba(0, 0, 0, 0.8);
+    color: #8f8; /* Lighter green on hover */
+   /* background-color: rgba(0, 0, 0, 0.8); Removed background hover */
     /* border-color: #fff; Removed hover border color */
-    text-shadow: 0 0 8px #fff, 0 0 15px #fff, 0 0 20px #0ff, 0 0 25px #f0f; /* Brighter glow on hover */
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.7), inset 0 0 8px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 12px #0f0, 0 0 20px #0f0; /* Brighter green glow on hover */
+   /* box-shadow: 0 0 12px rgba(255, 255, 255, 0.7), inset 0 0 8px rgba(255, 255, 255, 0.5); Removed box-shadow hover */
 }
 
-/* Keyframes for glitchy/glowing animation */
-@keyframes glitch-glow {
-    0%, 100% {
-        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0ff;
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3);
-        transform: translate(0, 0);
-        opacity: 1;
-    }
-    48% {
-        transform: translate(2px, -1px);
-        opacity: 0.9;
+#start-button:hover::after {
+    opacity: 1; /* Show cursor on hover */
+}
 
-    }
-    50% {
-        text-shadow: 0 0 6px #f00, 0 0 12px #0f0, 0 0 18px #00f; /* Brief color glitch */
-        box-shadow: 0 0 10px rgba(255, 0, 0, 0.6), inset 0 0 6px rgba(0, 255, 0, 0.4);
-        transform: translate(-1px, 1px);
-        opacity: 0.85;
-    }
-     52% {
-        transform: translate(1px, -2px);
-         opacity: 0.95;
-    }
+/* Keyframes for glitchy/glowing animation REMOVED */
+/* @keyframes glitch-glow { ... } */
+
+/* Keyframe for blinking cursor */
+@keyframes blink {
+    50% { opacity: 1; }
 }
 
 /* Hide other screens initially */
