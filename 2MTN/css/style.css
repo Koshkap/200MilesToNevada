@@ -1,73 +1,104 @@
 body {
     margin: 0;
-    padding: 0;
-    font-family: 'Courier New', Courier, monospace; /* Retro feel */
-    background-color: #000;
-    color: #fff;
     overflow: hidden; /* Prevent scrollbars */
+    background-image: url('../image.jpg'); /* Relative path from css/ to image.jpg */
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Courier New', Courier, monospace; /* Retro font */
 }
 
 #game-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
+    position: relative; /* Needed for absolute positioning of children */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #start-screen {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-image: url('../assets/images/start_background.jpg'); /* Placeholder */
-    background-size: cover;
-    background-position: center;
     text-align: center;
+    position: relative; /* Context for absolute positioned button */
+    width: 100%; /* Take full width of container */
+    height: 100%; /* Take full height of container */
+    display: flex; /* Use flexbox */
+    flex-direction: column;
+    justify-content: flex-start; /* Align content (title) to the top */
+    align-items: flex-start; /* Align content (title) to the left */
+    padding-left: 40px; /* Add some padding on the left */
+    padding-top: 25vh; /* Position title ~75% up the screen */
+    box-sizing: border-box; /* Include padding in width/height calculation */
 }
 
 #start-screen h1 {
-    font-size: 4em;
-    color: #ff00ff; /* Magenta */
-    text-shadow: 3px 3px 0px #00ffff; /* Cyan shadow */
-    margin-bottom: 40px;
+    color: #eee;
+    text-shadow: 0 0 8px rgba(255, 0, 0, 0.7), 0 0 12px rgba(0, 0, 255, 0.7); /* Uncanny text shadow */
+    font-size: 3em;
+   /* margin-bottom: 50px; Removed margin as flexbox handles spacing/positioning now */
+   position: relative; /* Ensure title is above the button if overlapping */
+   z-index: 1;
 }
 
+
 #start-button {
+    position: absolute;
+    bottom: 60px; /* Moved up slightly */
+    left: 40px; /* Position from left */
     padding: 15px 30px;
-    font-size: 1.5em;
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #ffff00; /* Yellow */
-    color: #000;
-    border: 3px solid #ff00ff; /* Magenta border */
+    font-size: 3em; /* Same size as title */
+    color: #f0f0f0; /* Retro white */
+    background-color: rgba(20, 20, 20, 0.6); /* Dark semi-transparent background */
+    border: none; /* Removed border */
+    border-radius: 5px;
     cursor: pointer;
-    box-shadow: 5px 5px 0px #00ffff; /* Cyan shadow */
+    font-family: inherit; /* Use body's retro font */
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0ff; /* White/cyan glow */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3); /* Subtle outer/inner glow */
     transition: all 0.1s ease-in-out;
+    animation: glitch-glow 1.5s infinite alternate; /* Apply animation */
+    z-index: 2; /* Ensure button is clickable if title is large */
 }
 
 #start-button:hover {
-    background-color: #ff00ff; /* Magenta on hover */
-    color: #ffff00; /* Yellow text on hover */
-    border-color: #ffff00;
-    box-shadow: 5px 5px 0px #000;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.8);
+    /* border-color: #fff; Removed hover border color */
+    text-shadow: 0 0 8px #fff, 0 0 15px #fff, 0 0 20px #0ff, 0 0 25px #f0f; /* Brighter glow on hover */
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.7), inset 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
-#start-button:active {
-    box-shadow: 2px 2px 0px #000;
-    transform: translate(3px, 3px);
+/* Keyframes for glitchy/glowing animation */
+@keyframes glitch-glow {
+    0%, 100% {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0ff;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3);
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    48% {
+        transform: translate(2px, -1px);
+        opacity: 0.9;
+
+    }
+    50% {
+        text-shadow: 0 0 6px #f00, 0 0 12px #0f0, 0 0 18px #00f; /* Brief color glitch */
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.6), inset 0 0 6px rgba(0, 255, 0, 0.4);
+        transform: translate(-1px, 1px);
+        opacity: 0.85;
+    }
+     52% {
+        transform: translate(1px, -2px);
+         opacity: 0.95;
+    }
 }
 
-/* Initially hide other screens */
-#video-player,
-#game-screen {
+/* Hide other screens initially */
+#video-player, #game-screen {
     display: none;
-    width: 100%;
-    height: 100%;
-    background-color: #111; /* Dark background for other states */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
 }
 
 #video-player video {
@@ -85,4 +116,4 @@ body {
      background-color: #ddd;
      color: #333;
      border: 2px solid #555;
-} 
+}
