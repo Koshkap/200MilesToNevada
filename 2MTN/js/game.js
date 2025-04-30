@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    let readyForDialog = [];
     // DOM Elements
     const startButton = document.getElementById('start-button');
     const startScreen = document.getElementById('start-screen');
@@ -150,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to switch screens (simplifies music handling slightly)
     function showScreen(screenToShow) {
+        readyForDialog = [false];
         // Check fullscreen again when showing a screen
         checkFullscreen();
 
@@ -322,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function startGame() {
         console.log("Starting game...");
         showScreen(gameScreen);
-
+        
         originalLookBackSrc = lookBackVideo.src; // Store original src
         const startRate = 0.1;
         const endRate = 1.0;
@@ -387,6 +389,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Schedule the mirror event trigger 10 seconds after acceleration completes
         // (Which is when the game loop actually starts)
+
+        readyForDialog[0] = true;
+        createDialog("200 miles to nevada left . . .    Outrun the Alien Apocalypse to Area-51 Play games on your phone to stay sane. Brake-Check crazy driversㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  Check your mirrors, and survive . . .");
+
         const accelerationDuration = 5000; // Match the duration used in accelerateVideo
         gameState.mirrorEventTimeout = setTimeout(triggerBrightFlashEvent, accelerationDuration + 10000);
     }
@@ -1307,6 +1313,58 @@ document.addEventListener('DOMContentLoaded', () => {
         // Immediately resolve with white fade
         resolveThirdEventWithFade();
     });
+
+    function createDialog(message) {
+        if (!readyForDialog[0]) return;
+    
+        const dialog = document.getElementById('dialog');
+        // const videoPlayerScreen = document.getElementById('video-player');
+        const gameScreen = document.getElementById('game-screen');
+    
+        // videoPlayerScreen.style.display = 'none';
+        dialog.style.display = 'inline-block';
+    
+        let messageArray = message.split(" ");
+        let currentText = "";
+        let index = 0;
+    
+        function showNextWord() {
+            let waitingForClick = false;
+            if (index >= messageArray.length) {
+                index++;
+                dialog.onclick = () => {
+                    if (index >= messageArray.length) {
+                        dialog.style.display = 'none';
+                    }
+                };
+                return;
+            }
+            if ((currentText + messageArray[index] + " ").length >= 40) {   
+                currentText = "";
+                waitingForClick = true
+                
+                dialog.onclick = () => {
+                    if (index >= messageArray.length) {
+                        dialog.style.display = 'none';
+                    }
+                    dialog.onclick = null; // Remove this listener after it's used
+                    currentText = "";
+                    if (index >= messageArray.length) return;
+                    showNextWord(); // Resume after click
+                };
+                return;
+            }
+            currentText += messageArray[index] + " ";
+            dialog.innerHTML = `<p>${currentText}</p>`;
+            index++;
+    
+            if (!waitingForClick) {
+                setTimeout(showNextWord, 100);
+            }
+        }
+    
+        showNextWord();
+    }
 
     console.log('Game script loaded. Waiting for start.');
 }); 
