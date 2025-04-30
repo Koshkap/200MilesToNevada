@@ -64,21 +64,21 @@ body {
     align-items: center;
 }
 
-/* Remove terminal line prefix from ::before */
+/* Remove before pseudo-element that was adding the prefix */
 #start-button::before {
-    content: none; /* Remove the ::before cursor */
+    content: none;
 }
 
-/* Add blinking block cursor AFTER the text */
+/* Move terminal cursor to after text */
 #start-button::after {
     content: '';
-    margin-left: 10px; /* Space after START */
+    margin-left: 10px;
     display: inline-block;
     width: 0.7em;
     height: 1em;
     background-color: #0f0;
     opacity: 1;
-    vertical-align: middle; /* Align with text */
+    vertical-align: middle;
     box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
     animation: 
         terminalBlink 1s step-end infinite,
@@ -87,83 +87,39 @@ body {
     top: -2px;
 }
 
-/* Remove hover effect that changes ::before */
-#start-button:hover::before {
-   /* No change on hover needed for ::before anymore */
-   content: none;
-   animation: none;
+/* Enhanced blinking cursor animation */
+@keyframes terminalBlink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
 }
 
-/* Keep existing hover style for the button text itself */
-#start-button:hover {
-    color: #8f8;
-    text-shadow: 0 0 12px #0f0, 0 0 20px #0f0;
+/* Subtle glow animation for the terminal cursor */
+@keyframes terminalGlow {
+    0% {
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(0, 255, 0, 1);
+    }
+    100% {
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+    }
 }
 
-/* --- Retro TV Turn-Off Transition --- */
-@keyframes tvTurnOffHorizontal {
-    0% { transform: scaleX(1); opacity: 1; }
-    40% { transform: scaleX(0.01); opacity: 1; }
-    100% { transform: scaleX(0.01); opacity: 0; }
+/* Boot-up sequence animation when hovering */
+#start-button:hover::after {
+    animation: terminalPulse 0.5s linear infinite;
 }
 
-@keyframes tvTurnOffVertical {
-    0% { transform: scaleY(1); }
-    30% { transform: scaleY(1); }
-    100% { transform: scaleY(0.01); }
-}
-
-@keyframes tvStaticNoise {
-    0%, 100% { background-position: 0 0; }
-    10% { background-position: -5% -10%; }
-    20% { background-position: 15% 5%; }
-    30% { background-position: 7% -15%; }
-    40% { background-position: 20% 10%; }
-    50% { background-position: -15% 5%; }
-    60% { background-position: 10% -5%; }
-    70% { background-position: -3% 15%; }
-    80% { background-position: 12% 0%; }
-    90% { background-position: -8% -8%; }
-}
-
-#transition-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    z-index: 2000; /* Highest */
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transform-origin: center center;
-}
-
-#transition-overlay::before { /* Static noise */
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-    opacity: 0;
-    animation: tvStaticNoise 0.2s linear infinite;
-    z-index: 2001;
-}
-
-/* State when transition is active */
-body.transition-active #transition-overlay {
-    opacity: 1;
-    visibility: visible;
-    animation: tvTurnOffHorizontal 0.8s ease-out forwards, /* Shrink horizontally first */
-               tvTurnOffVertical 0.8s ease-out forwards;   /* Then vertically */
-}
-
-body.transition-active #transition-overlay::before {
-    opacity: 1; /* Show static noise during transition */
+@keyframes terminalPulse {
+    0%, 100% { 
+        text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+        opacity: 1;
+    }
+    50% { 
+        text-shadow: 0 0 8px #0f0;
+        opacity: 0.8;
+    }
 }
 
 /* Keyframes for glitchy/glowing animation REMOVED */
@@ -237,7 +193,7 @@ body.transition-active #transition-overlay::before {
 
 #stats-container {
     position: absolute; 
-    top: 73%;
+    top: 70%;
     left: 65%; 
     transform: translate(-50%, 0);
     width: 15%; 
@@ -259,7 +215,7 @@ body.transition-active #transition-overlay::before {
 
 /* Add specific IDs or use nth-child for positioning */
 #energy-value-item {
-    transform: translateY(-4px); /* Move Energy Up */
+    transform: translateY(-8px); /* Increased negative value from -4px */
 }
 
 #boredom-value-item {
@@ -272,7 +228,7 @@ body.transition-active #transition-overlay::before {
 
 #miles-value {
     font-size: 1em;
-    font-weight: normal;
+    /* font-weight: normal; */ /* Removed - inherit from container */
 }
 
 #energy-value,
@@ -821,4 +777,326 @@ body::after {
     );
     pointer-events: none;
     z-index: 998;
+}
+
+/* Shake Animation */
+@keyframes shake {
+  0% { transform: translate(0.5px, 0.5px) rotate(0.2deg); }
+  10% { transform: translate(-0.5px, -0.5px) rotate(-0.2deg); }
+  20% { transform: translate(-1px, 0px) rotate(0.2deg); }
+  30% { transform: translate(1px, 0.5px) rotate(0deg); }
+  40% { transform: translate(0.5px, -0.5px) rotate(0.2deg); }
+  50% { transform: translate(-0.5px, 0.5px) rotate(-0.2deg); }
+  60% { transform: translate(-1px, 0.5px) rotate(0deg); }
+  70% { transform: translate(1px, 0px) rotate(-0.2deg); }
+  80% { transform: translate(-0.5px, -0.5px) rotate(0.2deg); }
+  90% { transform: translate(0.5px, 0.5px) rotate(0deg); }
+  100% { transform: translate(0.5px, -0.5px) rotate(-0.2deg); }
+}
+
+/* Intense Shake Animation for initial cutscene */
+@keyframes intenseShake {
+  0% { transform: translate(1.5px, 2px) rotate(0.8deg); }
+  10% { transform: translate(-2px, -1.5px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0.5px) rotate(0.7deg); }
+  30% { transform: translate(2.5px, 1px) rotate(-0.5deg); }
+  40% { transform: translate(1.5px, -2px) rotate(0.8deg); }
+  50% { transform: translate(-2px, 1.5px) rotate(-1deg); }
+  60% { transform: translate(-2.5px, 1px) rotate(0.5deg); }
+  70% { transform: translate(2px, 0.5px) rotate(-0.7deg); }
+  80% { transform: translate(-1.5px, -1.5px) rotate(0.9deg); }
+  90% { transform: translate(1.5px, 2px) rotate(-0.5deg); }
+  100% { transform: translate(2px, -1.5px) rotate(-0.8deg); }
+}
+
+.shake {
+  animation: shake 0.1s infinite; /* Faster frequency, shorter duration */
+}
+
+.intense-shake {
+  animation: intenseShake 0.05s infinite; /* Even faster, more intense */
+}
+
+/* Epilepsy Warning Styles */
+#epilepsy-warning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95); /* Very dark background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; /* On top of everything */
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#epilepsy-warning p {
+    color: #f00; /* Bright red */
+    font-size: 2em;
+    text-align: center;
+    padding: 20px;
+    text-shadow: 
+        0 0 10px #f00, 
+        0 0 20px #f00, 
+        0 0 30px #f66, 
+        0 0 40px #f66; /* Intense red glow */
+    animation: warningPulse 1s infinite alternate;
+    max-width: 80%;
+}
+
+@keyframes warningPulse {
+    from {
+        text-shadow: 
+            0 0 10px #f00, 
+            0 0 20px #f00, 
+            0 0 30px #f66, 
+            0 0 40px #f66;
+    }
+    to {
+        text-shadow: 
+            0 0 15px #f00, 
+            0 0 25px #f00, 
+            0 0 35px #f66, 
+            0 0 50px #f66;
+    }
+}
+
+/* Degauss Effect (CRT-like magnetic distortion) */
+@keyframes degauss {
+  0% { 
+    opacity: 0.4;
+    filter: brightness(1) contrast(1) hue-rotate(0deg);
+    transform: scale(1);
+  }
+  5% { 
+    opacity: 0.6;
+    filter: brightness(1.2) contrast(1.3) hue-rotate(2deg);
+    transform: scale(1.01);
+  }
+  15% { 
+    opacity: 0.5;
+    filter: brightness(0.9) contrast(1.1) hue-rotate(-1deg);
+    transform: scale(1.005) skew(0.2deg, 0.1deg);
+  }
+  30% { 
+    opacity: 0.3;
+    filter: brightness(1.1) contrast(1.05) hue-rotate(0.5deg);
+    transform: scale(1.003) skew(-0.1deg, 0.05deg);
+  }
+  50% { 
+    opacity: 0.2;
+    filter: brightness(1.05) contrast(1.02) hue-rotate(0deg);
+    transform: scale(1.002);
+  }
+  100% { 
+    opacity: 0;
+    filter: brightness(1) contrast(1) hue-rotate(0deg);
+    transform: scale(1);
+  }
+}
+
+#degauss-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.7) 0%, rgba(200,200,255,0.4) 20%, rgba(100,100,255,0.3) 40%, rgba(30,0,90,0.2) 60%, transparent 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0;
+}
+
+.degauss {
+  animation: degauss 1.2s ease-out forwards;
+}
+
+/* Look Back Video */
+#look-back-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 5; /* Above main video, below UI/degauss */
+    display: none; /* Hidden by default */
+}
+
+/* Look Back Button */
+#look-back-button {
+    padding: 10px 20px; /* Reduced horizontal padding to work better with width changes */
+    font-size: 1.5em;
+    font-family: 'Courier New', monospace;
+    background-color: rgba(0, 0, 0, 0.7); /* Copied from brake-check */
+    color: #0f0; /* Copied from brake-check */
+    border: 2px solid #0f0; /* Copied from brake-check */
+    border-radius: 5px;
+    cursor: pointer;
+    text-shadow: 0 0 5px #0f0; /* Copied from brake-check */
+    transition: all 0.2s ease; /* Copied from brake-check */
+    position: relative; 
+    line-height: 1;
+    /* Added min-width to keep it reasonable when not expanded */
+    min-width: 100px;
+    /* Removed gradient, specific border, box-shadow from previous style */
+}
+
+#look-back-button:hover {
+    background-color: rgba(0, 30, 0, 0.8); /* Copied from brake-check hover */
+    box-shadow: 0 0 15px #0f0; /* Copied from brake-check hover */
+    /* Removed specific border/color changes from previous style */
+    color: #0f0; /* Ensure color stays green on hover */
+    text-shadow: 0 0 8px #0f0; /* Slightly stronger shadow on hover */
+}
+
+/* Bright Flash Effect */
+@keyframes brightFlash {
+  0%, 100% { filter: brightness(2.5); }
+  25% { filter: brightness(4.0); }
+  50% { filter: brightness(2.0); }
+  75% { filter: brightness(3.5); }
+}
+
+.bright-flash-effect {
+    animation: brightFlash 0.4s linear infinite;
+}
+
+/* Red Flash Effect for second event */
+@keyframes redFlash {
+  0%, 100% { filter: brightness(1.5) sepia(0.3) hue-rotate(300deg); }
+  25% { filter: brightness(2.0) sepia(0.5) hue-rotate(320deg); }
+  50% { filter: brightness(1.3) sepia(0.7) hue-rotate(340deg); }
+  75% { filter: brightness(1.8) sepia(0.6) hue-rotate(310deg); }
+}
+
+.red-flash-effect {
+    animation: redFlash 0.3s linear infinite;
+}
+
+/* Horror Flash Effect for third event */
+@keyframes horrorFlash {
+  0%, 100% { filter: brightness(3.0) contrast(1.5) saturate(1.2) hue-rotate(10deg); }
+  25% { filter: brightness(4.0) contrast(2.0) saturate(0.8) hue-rotate(-5deg); }
+  50% { filter: brightness(2.5) contrast(1.8) saturate(1.5) hue-rotate(15deg); }
+  75% { filter: brightness(3.5) contrast(1.2) saturate(0.6) hue-rotate(-10deg); }
+}
+
+.horror-flash-effect {
+    animation: horrorFlash 0.15s linear infinite;
+}
+
+/* Markiplier Beam Button */
+#markiplier-beam-button {
+    padding: 15px 30px;
+    font-size: 1.5em;
+    font-family: 'Courier New', monospace;
+    background-color: rgba(30, 0, 40, 0.8);
+    color: #f0f;
+    border: 2px solid #f0f;
+    border-radius: 5px;
+    cursor: pointer;
+    text-shadow: 0 0 5px #f0f;
+    transition: all 0.2s ease;
+    animation: beamPulse 0.5s infinite alternate;
+}
+
+#markiplier-beam-button:hover {
+    background-color: rgba(60, 0, 80, 0.9);
+    box-shadow: 0 0 20px #f0f;
+}
+
+@keyframes beamPulse {
+    0% { box-shadow: 0 0 10px #f0f, 0 0 20px #f0f; }
+    100% { box-shadow: 0 0 15px #f0f, 0 0 30px #f0f, 0 0 40px #f0f; }
+}
+
+/* White Fade Overlay */
+#white-fade-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0);
+    z-index: 9000;
+    pointer-events: none;
+    transition: background-color 1.5s ease;
+}
+
+#white-fade-overlay.fade-active {
+    background-color: rgba(255, 255, 255, 1);
+}
+
+/* Command Line Interface Styles */
+#cli-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Courier New', Courier, monospace;
+    z-index: 9500; /* Above white fade */
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+#cli-container.visible {
+    opacity: 1;
+}
+
+#cli-content {
+    width: 80%;
+    max-width: 800px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#cli-text {
+    color: #0f0;
+    font-size: 1.5em;
+    margin-right: 5px;
+    text-shadow: 0 0 5px #0f0;
+}
+
+#cli-cursor {
+    color: #0f0;
+    font-size: 1.5em;
+    animation: cursor-blink 0.8s infinite;
+    text-shadow: 0 0 5px #0f0;
+}
+
+@keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* CLI Loading Animation */
+.loading-animation {
+    display: block;
+    margin-top: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+}
+
+@keyframes progress-bar {
+    0% { width: 0; }
+    100% { width: 100%; }
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: #0f0;
+    margin-top: 10px;
+    box-shadow: 0 0 10px #0f0;
+    animation: progress-bar 3s linear;
+    width: 0;
 }

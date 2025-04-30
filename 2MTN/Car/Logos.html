@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forest Camp Game</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #0a3f1d;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #0a3f1d;
+    }
+    #textbox {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 12px 24px;
+  font-family: sans-serif;
+  font-size: 18px;
+  border-radius: 8px;
+  z-index: 10;
+  max-width: 300px;
+}
+
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="768" height="1152"></canvas>
+<div id="textbox">What a nice rest I had</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const keys = {};
+
+const assets = {
+  bg: 'forest_camp.webp',
+  player_idle: 'player_idle.png',
+  player_walk: 'player_walk.png',
+  car: 'jeep_charokee.png',
+  enemy: 'enemy.png',
+  newspaper: 'newspaper.png',
+  newspaper_2: 'newspaper_2.png',
+  newspaper_3: 'newspaper_3.png',
+  newspaper_4: 'newspaper_4.png',
+  arrow: 'arrow.png'
+};
+
+let images = {};
+let player = { x: 384, y: 880, w: 64, h: 64, frame: 0, inCar: false, speed: 2 };
+let car = { x: 384, y: 600, w: 96, h: 192, visible: true };
+let enemy = null;
+
+const newspaper = {
+  x: 384 - 32,
+  y: 780,
+  width: 64,
+  height: 64,
+  isHovered: false
+};
+
+let isReadingNewspaper = false;
+let currentPage = 0;
+const newspaperPages = ['newspaper', 'newspaper_2', 'newspaper_3', 'newspaper_4'];
+
+function loadAssets(callback) {
+  let loaded = 0;
+  const total = Object.keys(assets).length;
+  for (let key in assets) {
+    const img = new Image();
+    img.src = assets[key];
+    img.onload = () => {
+      images[key] = img;
+      if (++loaded === total) callback();
+    };
+  }
+}
+
+function drawSprite(img, x, y, w, h) {
+  ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
+}
+
+function updatePlayer() {
+  if (isReadingNewspaper) return;
+
+  const speed = player.speed;
+  const walking = keys['w'] || keys['a'] || keys['s'] || keys['d'];
+
+  if (!player.inCar) {
+    if (keys['w']) player.y -= speed;
+    if (keys['s']) player.y += speed;
+    if (keys['a']) player.x -= speed;
+    if (keys['d']) player.x += speed;
+
+    const dx = player.x - car.x;
+    const dy = player.y - car.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 60) {
+      player.inCar = true;
+      car.visible = false;
+      enemy = { x: player.x, y: player.y + 400 };
+      document.getElementById('textbox').innerText = "What is that behind me?";
+    }
+  } else {
+    if (keys['w']) player.y -= speed;
+    if (keys['s']) player.y += speed;
+    player.x = car.x;
+
+    if (!enemy) {
+      enemy = { x: player.x, y: player.y + 400 };
+      document.getElementById('textbox').innerText = "What is that behind me?";
+    }
+
+    if (player.y < 0) {
+      window.location.href = "Logos.html";
+    }
+  }
+
+  if (walking) {
+    player.frame += 0.2;
+    if (player.frame >= 2) player.frame = 0;
+  } else {
+    player.frame = 0;
+  }
+}
+
+function updateEnemy() {
+  if (!enemy || isReadingNewspaper) return;
+  const dx = player.x - enemy.x;
+  const dy = player.y - enemy.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const speed = 1.5;
+  if (dist > 0) {
+    enemy.x += (dx / dist) * speed;
+    enemy.y += (dy / dist) * speed;
+  }
+}
+
+function updateHoverState(mouseX, mouseY) {
+  if (isReadingNewspaper) return;
+
+  if (
+    mouseX >= newspaper.x &&
+    mouseX <= newspaper.x + newspaper.width &&
+    mouseY >= newspaper.y &&
+    mouseY <= newspaper.y + newspaper.height
+  ) {
+    newspaper.isHovered = true;
+    canvas.style.cursor = 'pointer';
+  } else {
+    newspaper.isHovered = false;
+    canvas.style.cursor = 'default';
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(images.bg, 0, 0, canvas.width, canvas.height);
+
+  if (isReadingNewspaper) {
+    const pageKey = newspaperPages[currentPage];
+    ctx.drawImage(images[pageKey], 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(images.arrow, canvas.width - 80, canvas.height / 2 - 32, 64, 64);
+
+    return;
+  }
+
+  ctx.drawImage(images.newspaper, newspaper.x, newspaper.y, newspaper.width, newspaper.height);
+
+  if (!player.inCar) {
+    const sprite = keys['w'] || keys['a'] || keys['s'] || keys['d'] ? images.player_walk : images.player_idle;
+    drawSprite(sprite, player.x, player.y, player.w, player.h);
+  } else {
+    drawSprite(images.car, player.x, player.y, car.w, car.h);
+  }
+
+  if (car.visible) {
+    drawSprite(images.car, car.x, car.y, car.w, car.h);
+  }
+
+  if (enemy) {
+    drawSprite(images.enemy, enemy.x, enemy.y, 128, 128);
+  }
+}
+
+function gameLoop() {
+  updatePlayer();
+  updateEnemy();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// Input
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') isReadingNewspaper = false;
+  keys[e.key.toLowerCase()] = true;
+});
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+// Mouse hover/click
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  updateHoverState(mouseX, mouseY);
+});
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  if (isReadingNewspaper) {
+    if (
+  mouseX >= canvas.width - 80 &&
+  mouseX <= canvas.width - 16 &&
+  mouseY >= canvas.height / 2 - 32 &&
+  mouseY <= canvas.height / 2 + 32
+)
+ {
+      currentPage = (currentPage + 1) % newspaperPages.length;
+    }
+  } else if (newspaper.isHovered) {
+    isReadingNewspaper = true;
+    currentPage = 0;
+  }
+});
+
+loadAssets(() => {
+  gameLoop();
+});
+</script>
+</body>
+</html>
