@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const accelerationSound = document.getElementById('acceleration-sound');
     const honkSound = document.getElementById('honk-sound'); // Added
     const creepySignalSound = document.getElementById('creepy-signal-sound'); // Added for second event
+    const tireScreechSound = document.getElementById('tire-screech-sound'); // Added for brake check
+    const markiplierScreechSound = document.getElementById('markiplier-screech-sound'); // Added for third event button
     // const idleSound = document.getElementById('idle-sound'); // Removed
     const degaussOverlay = document.getElementById('degauss-overlay');
     
@@ -226,19 +228,19 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Epilepsy warning hidden, playing blip...');
             
             // Now play the blip video
-            blipVideo.style.display = 'block'; 
-            blipVideo.play().then(() => {
-                // Add listener for when blip finishes
-                blipVideo.onended = () => {
+        blipVideo.style.display = 'block'; 
+        blipVideo.play().then(() => {
+            // Add listener for when blip finishes
+            blipVideo.onended = () => {
                     console.log('Blip finished, proceeding to cutscene...');
-                    // Hide blip video again
-                    blipVideo.style.display = 'none';
+                // Hide blip video again
+                blipVideo.style.display = 'none';
                     playShakeCutscene(); // Play the shake cutscene
-                };
-            }).catch(error => {
-                console.error('Blip video play failed:', error);
+            };
+        }).catch(error => {
+            console.error('Blip video play failed:', error);
                 // If blip fails, hide it and maybe proceed directly to cutscene
-                blipVideo.style.display = 'none'; 
+            blipVideo.style.display = 'none'; 
                 playShakeCutscene();
             });
         }, 1000); // 1 second duration for the warning
@@ -431,6 +433,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset video effects
             gameVideo.classList.remove('red-flash-effect');
             
+            // Ensure all buttons are visible again
+            brakeCheckButton.classList.remove('hidden');
+            lookBackButton.classList.remove('hidden');
+            
+            // Ensure stats are visible
+            statsContainer.style.opacity = '1';
+            statsContainer.style.pointerEvents = 'auto';
+            
             // Schedule third event 10 seconds later
             console.log("Scheduling third event (Markiplier beam) in 10 seconds...");
             gameState.thirdEventTimeout = setTimeout(triggerThirdEvent, 10000);
@@ -438,11 +448,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Resolve first event
             gameState.isBrightFlashEventActive = false;
             gameState.isAlienInMirror = false;
-            
+
             // Stop honking
             honkSound.pause();
             honkSound.currentTime = 0;
-            
+
             // Reset main video brightness
             gameVideo.classList.remove('bright-flash-effect');
             
@@ -481,6 +491,9 @@ document.addEventListener('DOMContentLoaded', () => {
         statsContainer.style.opacity = '0';
         statsContainer.style.pointerEvents = 'none';
         
+        // Hide brake check button when looking back
+        brakeCheckButton.classList.add('hidden');
+        
         if (gameState.isSecondEventActive && !gameState.isSecondEventAlienSeen) {
             // First time looking back during second event - show second alien video
             console.log("Look back during second event: Showing second alien!");
@@ -503,6 +516,28 @@ document.addEventListener('DOMContentLoaded', () => {
             // Apply red flash effect to main video for when they exit rear view
             gameVideo.classList.remove('bright-flash-effect');
             gameVideo.classList.add('red-flash-effect');
+            
+            // MODIFICATION: Disable manual lookBackEnd by removing event listener
+            lookBackButton.removeEventListener('mouseleave', handleLookBackEnd);
+            
+            // Hide all game buttons during forced look back period
+            brakeCheckButton.classList.add('hidden');
+            lookBackButton.classList.add('hidden');
+            blastButton.classList.add('hidden');
+            
+            // Force return to normal view after 6 seconds
+            setTimeout(() => {
+                console.log("Forced return to normal view after 6 seconds");
+                // Re-add the event listener for future look backs
+                lookBackButton.addEventListener('mouseleave', handleLookBackEnd);
+                
+                // Show buttons again (except blast which should stay hidden unless needed)
+                lookBackButton.classList.remove('hidden');
+                brakeCheckButton.classList.remove('hidden');
+                
+                // Manually trigger the look back end function
+                handleLookBackEnd();
+            }, 6000);
         } else if (gameState.isSecondEventActive && gameState.isSecondEventAlienSeen) {
             // Looking back again during second event
             lookBackVideo.src = 'fbc19ceb-e150-4cef-98ca-7dc21a376822.mp4';
@@ -557,10 +592,16 @@ document.addEventListener('DOMContentLoaded', () => {
         lookBackVideo.pause();
         lookBackVideo.style.display = 'none';
         
+        // Show brake check button again (unless third event is active)
+        if (!gameState.isThirdEventActive) {
+            brakeCheckButton.classList.remove('hidden');
+        }
+        
         if (gameState.isSecondEventAlienSeen) {
             // During second event after seeing the alien, maintain red flash
-            statsContainer.style.opacity = '0';
-            statsContainer.style.pointerEvents = 'none';
+            // MODIFICATION: Show stats but keep red flash and creepy sound
+            statsContainer.style.opacity = '1';
+            statsContainer.style.pointerEvents = 'auto';
             
             // Make sure main video has red flash effect
             if (!gameVideo.classList.contains('red-flash-effect')) {
@@ -752,24 +793,96 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Handle brake check button
     brakeCheckButton.addEventListener('click', () => {
-        if (gameState.brakeCheckActive) return;
+        // Always return if cooldown is active
+        if (brakeCheckButton.classList.contains('cooldown')) return;
 
-        if (gameState.isSecondEventActive || gameState.isAlienInMirror || gameState.isBrightFlashEventActive) {
-            // Resolve either event
+        // Play tire screech sound always
+        tireScreechSound.currentTime = 0;
+        tireScreechSound.play().catch(e => console.error("Tire screech sound play failed:", e));
+
+        // Start the cooldown always
+        startBrakeCheckCooldown();
+
+        // Now decide what the brake check does based on state
+        if (gameState.isAlienInMirror || gameState.isSecondEventAlienSeen) {
+            // Player has seen the alien in the mirror - resolve the event
+            console.log("Brake check resolving mirror event (alien seen).");
             resolveMirrorAlienEvent();
-            // Optionally add a small reward for resolving the event
-            gameState.energy = Math.min(100, gameState.energy + 5);
+            gameState.energy = Math.min(100, gameState.energy + 5); // Reward
+        } else if (gameState.isBrightFlashEventActive || gameState.isSecondEventActive) {
+            // Mirror event is active, but player hasn't looked back yet
+            console.log("Brake check ineffective - need to look back first.");
+            // Just sound + cooldown was applied
         } else {
-            // Normal brake check logic for road cars
-            startBrakeCheck();
+            // No mirror events active - perform normal road car check
+            console.log("Performing normal road car brake check.");
+            if (gameState.brakeCheckActive) return; // Avoid race conditions with startBrakeCheck's own logic
+            startBrakeCheck(); // Handles pausing video, etc.
             if (!gameState.alienCar) {
+                // Penalty for checking a non-alien car
                 gameState.energy = Math.max(0, gameState.energy - 5);
                 gameState.boredom = Math.min(100, gameState.boredom + 5);
             } else {
+                // Correctly checked an alien car
                 gameState.carChecked = true;
             }
         }
     });
+    
+    // Function to start the brake check cooldown
+    function startBrakeCheckCooldown() {
+        // Apply cooldown class to button
+        brakeCheckButton.classList.add('cooldown');
+        
+        // Create cooldown timer container
+        const cooldownContainer = document.createElement('div');
+        cooldownContainer.className = 'brake-cooldown-container';
+        
+        // Create cooldown timer elements
+        const cooldownTimer = document.createElement('div');
+        cooldownTimer.className = 'brake-cooldown-timer';
+        
+        const cooldownSpinner = document.createElement('div');
+        cooldownSpinner.className = 'brake-cooldown-spinner';
+        
+        const cooldownMask = document.createElement('div');
+        cooldownMask.className = 'brake-cooldown-mask';
+        
+        // Assemble the timer
+        cooldownTimer.appendChild(cooldownSpinner);
+        cooldownTimer.appendChild(cooldownMask);
+        cooldownContainer.appendChild(cooldownTimer);
+        
+        // Add to the brake check button parent
+        brakeCheckButton.parentNode.appendChild(cooldownContainer);
+        
+        // Set up variables for the animation
+        const cooldownDuration = 3000; // 3 seconds
+        const startTime = Date.now();
+        const updateInterval = 50; // Update every 50ms for smooth animation
+        
+        // Function to update the cooldown pie timer
+        function updateCooldown() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / cooldownDuration, 1);
+            
+            // Update the pie chart
+            const angle = progress * 360;
+            cooldownSpinner.style.background = `conic-gradient(#0f0 ${angle}deg, transparent ${angle}deg)`;
+            
+            if (progress < 1) {
+                // Continue updating
+                setTimeout(updateCooldown, updateInterval);
+            } else {
+                // End cooldown
+                brakeCheckButton.classList.remove('cooldown');
+                cooldownContainer.remove();
+            }
+        }
+        
+        // Start the update loop
+        updateCooldown();
+    }
     
     // Start the brake check effect - PAUSE VIDEO
     function startBrakeCheck() {
@@ -802,32 +915,27 @@ document.addEventListener('DOMContentLoaded', () => {
             
         // Process the result (alien check, etc.)
         if (gameState.alienCar && gameState.carChecked) {
-             const isAlien = Math.random() > 0.3;
-             if (isAlien) {
-                 gameVideo.style.filter = "brightness(1) sepia(1) hue-rotate(300deg)";
-                 blastButton.classList.remove('hidden');
-                 setTimeout(() => {
-                     if (gameState.alienCar) {
-                         gameState.energy = Math.max(0, gameState.energy - 20);
-                         resetCarEncounter();
-                     }
-                 }, 3000);
-             } else {
-                 gameVideo.style.filter = "brightness(1.5)";
-                 setTimeout(() => {
-                     gameVideo.style.filter = "none";
-                     resetCarEncounter();
-                 }, 1000);
-             }
-         } else if (gameState.alienCar && !gameState.carChecked) {
-             // If an alien appeared but wasn't checked during the pause, reset it now
-             gameVideo.style.filter = "none";
-             resetCarEncounter();
-         }
+            // When checking an alien car, show visual effect and automatically resolve
+            // No need for blast button anymore
+            gameVideo.style.filter = "brightness(1.5) contrast(1.2)";
+            
+            // Give player rewards immediately (same as blast button used to give)
+            gameState.energy = Math.min(100, gameState.energy + 10); // Energy boost
+            gameState.boredom = Math.max(0, gameState.boredom - 15); // Reduce boredom
+            
+            // Reset after a short visual effect
+            setTimeout(() => {
+                resetCarEncounter();
+            }, 1000);
+        } else if (gameState.alienCar && !gameState.carChecked) {
+            // If an alien appeared but wasn't checked during the pause, reset it now
+            gameVideo.style.filter = "none";
+            resetCarEncounter();
+        }
         // Note: No timeout needed here as video resumes instantly
     }
     
-    // Handle blast button
+    // Handle blast button - This event listener remains but blast button is never shown now
     blastButton.addEventListener('click', () => {
         if (!gameState.alienCar || !gameState.carChecked) return;
         
@@ -847,7 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.alienCar = false;
         gameState.carChecked = false;
         gameVideo.style.filter = "none";
-        blastButton.classList.add('hidden');
+        blastButton.classList.add('hidden'); // This ensures blast button stays hidden
         
         // Only schedule next encounter if not in brake check
         if (!gameState.brakeCheckActive) {
@@ -993,8 +1101,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Spam the creepy signal sound multiple times
         playMultipleCreepySounds();
         
-        // Show the Markiplier beam button
-        markiplierBeamButton.classList.remove('hidden');
+        // Hide ALL buttons initially
+        brakeCheckButton.classList.add('hidden');
+        lookBackButton.classList.add('hidden');
+        markiplierBeamButton.classList.add('hidden'); // Hide this too initially
         
         // Hide stats during this event
         statsContainer.style.opacity = '0';
@@ -1003,7 +1113,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Make sure we can't trigger look back during this event
         lookBackButton.style.pointerEvents = 'none';
         
-        // Auto-resolve after 8 seconds with fade to white
+        // After 3 seconds, show ONLY the Markiplier beam button
+        setTimeout(() => {
+            console.log("Showing Markiplier beam button after 3-second delay");
+            markiplierBeamButton.classList.remove('hidden');
+        }, 3000);
+        
+        // Auto-resolve after 8 seconds with fade to white (unchanged timing)
         gameState.thirdEventAutoResolveTimeout = setTimeout(resolveThirdEventWithFade, 8000);
     }
     
@@ -1080,6 +1196,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         creepySignalSound.pause();
         creepySignalSound.currentTime = 0;
+        
+        tireScreechSound.pause();
+        tireScreechSound.currentTime = 0;
+        
+        markiplierScreechSound.pause();
+        markiplierScreechSound.currentTime = 0;
         
         // Also stop any dynamically created audio elements that might be playing
         document.querySelectorAll('audio').forEach(audio => {
@@ -1174,6 +1296,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!gameState.isThirdEventActive) return;
         
         console.log("Markiplier beam activated!");
+        
+        // Play the screech sound
+        markiplierScreechSound.currentTime = 0;
+        markiplierScreechSound.play().catch(e => console.error("Markiplier screech sound play failed:", e));
         
         // Clear the auto-resolve timeout so it doesn't trigger later
         clearTimeout(gameState.thirdEventAutoResolveTimeout);
