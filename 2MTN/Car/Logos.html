@@ -6,480 +6,330 @@
   <style>
     body {
       margin: 0;
-      background-color: #000; /* Black background */
+      background-color: #000;
       overflow: hidden;
-      font-family: 'Courier New', Courier, monospace; /* Monospace font */
-      color: #0f0; /* Green text */
+      font-family: 'Courier New', Courier, monospace;
+      color: #0f0;
     }
     #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
       background-color: #000;
-      display: flex;
-      flex-direction: column; /* Stack elements vertically */
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-      padding: 20px;
-      box-sizing: border-box;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 100; padding: 20px; box-sizing: border-box;
       text-align: center;
     }
     #loading-text {
-      font-size: 1.5em;
-      margin-bottom: 15px;
+      font-size: 1.5em; margin-bottom: 15px;
       text-shadow: 0 0 5px #0f0;
     }
     #loading-instructions {
-      font-size: 1.2em;
-      margin-top: 10px;
-      color: #bbb; /* Lighter gray for instructions */
-      text-shadow: 0 0 3px #bbb;
+      font-size: 1.2em; margin-top: 10px;
+      color: #bbb; text-shadow: 0 0 3px #bbb;
     }
     #loading-cursor {
-      display: inline-block;
-      width: 0.7em;
-      height: 1.2em;
-      background-color: #0f0;
-      margin-left: 5px;
-      vertical-align: bottom;
-      animation: cursor-blink 0.8s infinite;
+      display: inline-block; width: 0.7em; height: 1.2em;
+      background-color: #0f0; margin-left: 5px;
+      vertical-align: bottom; animation: cursor-blink .8s infinite;
       box-shadow: 0 0 5px #0f0;
     }
     @keyframes cursor-blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
+      0%,50% { opacity: 1; }
+      51%,100% { opacity: 0; }
     }
-
     #game-container {
-      width: 100%;
-      height: 100vh;
-      display: flex; /* Use flex to center canvas */
-      justify-content: center;
-      align-items: center;
-      position: relative; /* Needed for absolute textbox */
-      opacity: 0; /* Start hidden */
-      transition: opacity 0.5s ease-in;
+      width: 100%; height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+      position: relative; opacity: 0;
+      transition: opacity .5s ease-in;
     }
-    #game-container.visible {
-      opacity: 1;
-    }
-
+    #game-container.visible { opacity: 1; }
     canvas {
-      display: block;
-      /* Let canvas size be determined by script, but constrain max size */
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain; /* Scale down nicely if needed */
-      background: #0a3f1d; /* Keep original game background for canvas */
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); /* Add a subtle glow */
+      display: block; max-width: 100%; max-height: 100%;
+      object-fit: contain; background: #0a3f1d;
+      box-shadow: 0 0 15px rgba(0,255,0,.3);
     }
     #textbox {
-      position: absolute;
-      bottom: 20px; /* Move to bottom */
-      left: 50%; /* Center horizontally */
-      transform: translateX(-50%); /* Correct centering */
-      background: rgba(0, 0, 0, 0.85);
-      color: #0f0; /* Match terminal text */
-      padding: 10px 20px;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 1.1em;
-      border: 1px solid #0f0; /* Green border */
-      border-radius: 0; /* Sharp corners */
-      z-index: 10;
-      max-width: 90%; /* Ensure it fits */
-      box-shadow: 0 0 8px #0f0;
+      position: absolute; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.85); color: #0f0;
+      padding: 10px 20px; font-size: 1.1em;
+      border: 1px solid #0f0; z-index: 10;
+      max-width: 90%; box-shadow: 0 0 8px #0f0;
       text-align: center;
     }
-    /* Style for newspaper view */
+    #newspaper-description-box {
+      position: absolute; top: 20px; left: 20px;
+      width: 260px; background: rgba(0,0,0,.85); color: #0f0;
+      padding: 15px; font-size: 1em;
+      border: 1px solid #0f0; z-index: 30;
+      display: none; box-shadow: 0 0 10px #0f0;
+    }
+    #close-instruction {
+      position: absolute; top: 20px; left: 340px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1em; color: #0f0;
+      display: none; z-index: 30;
+    }
     .newspaper-view canvas {
-        filter: brightness(0.5); /* Dim canvas when reading */
+      filter: brightness(.5);
     }
     .newspaper-image {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        max-width: 80%;
-        max-height: 90%;
-        border: 3px solid #0f0;
-        box-shadow: 0 0 20px #0f0;
-        z-index: 20;
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      max-width: 80%; max-height: 90%;
+      border: 3px solid #0f0; box-shadow: 0 0 20px #0f0;
+      z-index: 20;
+    }
+    .newspaper-arrow,
+    .newspaper-back-arrow {
+      position: absolute; top: 50%;
+      width: 50px; height: 50px; cursor: pointer;
+      filter: drop-shadow(0 0 5px #0f0); z-index: 21;
     }
     .newspaper-arrow {
-        position: absolute;
-        top: 50%;
-        right: 5%;
-        transform: translateY(-50%);
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-        filter: drop-shadow(0 0 5px #0f0);
-        z-index: 21;
+      right: 30%; transform: translateY(-50%);
     }
-
+    .newspaper-back-arrow {
+      left: 30%; transform: translateY(-50%) rotate(180deg);
+    }
   </style>
 </head>
 <body>
+  <div id="loading-screen">
+    <div id="loading-text"></div><span id="loading-cursor"></span>
+    <div id="loading-instructions" style="opacity:0;">Use WASD to move</div>
+  </div>
+  <div id="game-container">
+    <canvas id="gameCanvas" width="768" height="1152"></canvas>
+    <div id="textbox">What a nice rest I had</div>
+    <div id="newspaper-description-box">Description will appear here</div>
+    <div id="close-instruction">press ESC to stop reading</div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingText = document.getElementById('loading-text');
+    const loadingInstructions = document.getElementById('loading-instructions');
+    const gameContainer = document.getElementById('game-container');
+    const textbox = document.getElementById('textbox');
+    const descBox = document.getElementById('newspaper-description-box');
+    const closeInstr = document.getElementById('close-instruction');
+    const keys = {};
 
-<div id="loading-screen">
-  <div id="loading-text"></div><span id="loading-cursor"></span>
-  <div id="loading-instructions" style="opacity: 0;">Use WASD to move</div>
-</div>
-
-<div id="game-container">
-  <canvas id="gameCanvas" width="768" height="1152"></canvas>
-  <div id="textbox">What a nice rest I had</div>
-  <!-- Newspaper elements will be added here by script -->
-</div>
-
-<script>
-// --- DOM Elements ---
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const loadingScreen = document.getElementById('loading-screen');
-const loadingText = document.getElementById('loading-text');
-const loadingInstructions = document.getElementById('loading-instructions');
-const gameContainer = document.getElementById('game-container');
-const textbox = document.getElementById('textbox');
-const keys = {};
-
-// --- Assets & Game State ---
-const assets = {
-  bg: 'forest_camp.webp',
-  player_idle: 'player_idle.png',
-  player_walk: 'player_walk.png',
-  car: 'jeep_charokee.png',
-  enemy: 'enemy.png',
-  newspaper: 'newspaper.png',
-  newspaper_2: 'newspaper_2.png',
-  newspaper_3: 'newspaper_3.png',
-  newspaper_4: 'newspaper_4.png',
-  arrow: 'arrow.png'
-};
-
-let images = {};
-let player = { x: 384, y: 880, w: 64, h: 64, frame: 0, inCar: false, speed: 2 };
-let car = { x: 384, y: 600, w: 96, h: 192, visible: true };
-let enemy = null;
-
-const newspaper = {
-  x: 384 - 32,
-  y: 780,
-  width: 64,
-  height: 64,
-  isHovered: false
-};
-
-let isReadingNewspaper = false;
-let currentPage = 0;
-const newspaperPages = ['newspaper', 'newspaper_2', 'newspaper_3', 'newspaper_4'];
-let newspaperImageView = null;
-let newspaperArrowView = null;
-
-// --- Loading Functions ---
-function startLoadingAnimation() {
-  const textToType = "LOADING Area53.MINIGAME...";
-  let currentCharIndex = 0;
-
-  function typeChar() {
-    if (currentCharIndex < textToType.length) {
-      loadingText.textContent += textToType.charAt(currentCharIndex);
-      currentCharIndex++;
-      setTimeout(typeChar, 80); // Adjust typing speed here
-    } else {
-      // Typing finished, show instructions and start game after delay
-      loadingInstructions.style.opacity = '1';
-      setTimeout(startGame, 2000); // Wait 2 seconds after typing
-    }
-  }
-  typeChar();
-}
-
-function startGame() {
-  loadingScreen.style.display = 'none';
-  gameContainer.classList.add('visible');
-  // Resize canvas initially
-  resizeCanvas();
-  // Start game loop
-  loadAssets(() => {
-    gameLoop();
-  });
-}
-
-// --- Asset Loading ---
-function loadAssets(callback) {
-  let loaded = 0;
-  const total = Object.keys(assets).length;
-  for (let key in assets) {
-    const img = new Image();
-    // Adjust path assuming assets are relative to the HTML file location
-    img.src = `./${assets[key]}`; 
-    img.onload = () => {
-      images[key] = img;
-      if (++loaded === total) callback();
+    const assets = {
+      bg: 'forest_camp.webp',
+      player_idle: 'player_idle.png',
+      player_walk: 'player_walk.png',
+      car: 'jeep_charokee.png',
+      enemy: 'enemy.png',
+      newspaper: 'newspaper.png',
+      newspaper_2: 'newspaper_2.png',
+      newspaper_3: 'newspaper_3.png',
+      newspaper_4: 'newspaper_4.png',
+      arrow: 'arrow.png'
     };
-    img.onerror = () => {
-        console.error(`Failed to load asset: ${key} at ${img.src}`);
-        // Handle error, maybe skip this asset or show a placeholder
-        images[key] = null; // Mark as failed
-        if (++loaded === total) callback(); // Still call callback
+
+    const newspaperDescriptions = {
+      newspaper:  "Local reports describe monstrous sightings near the forest: villagers report glowing eyes and hulking shapes moving between the trees. Authorities dismiss them as hoaxes, but fresh footprints and shredded foliage suggest something far more sinister lurking in the shadows.",
+      newspaper_2:"A woman was discovered inside her home, horrifically eaten from the inside out. There were no signs of forced entry—only strange claw marks and pools of darkened blood. Rumors whisper of a cursed entity stalking the night.",
+      newspaper_3:"At dusk, military and police units engaged an unrecognizable creature at the forest’s edge. Uniforms scorched and equipment melted on contact. An immediate press blackout was imposed; locals fear an insider cover-up of horrific experiments gone wrong.",
+      newspaper_4:"A final chilling message was scrawled in mud (what could this mean): 'Don't trust anyone—but especially not the glow.' Some believe it’s a warning, others think it’s a trap set by the very thing that haunts the woods."
+    };
+
+    let images = {};
+    let player = { x:384, y:880, w:64, h:64, frame:0, inCar:false, speed:2 };
+    let car    = { x:384, y:600, w:96, h:192, visible:true };
+    let enemy  = null;
+
+    const newspaper = { x:352, y:780, width:64, height:64, isHovered:false };
+    let isReadingNewspaper = false;
+    let currentPage = 0;
+    const newspaperPages = ['newspaper','newspaper_2','newspaper_3','newspaper_4'];
+    let newspaperImageView = null;
+    let newspaperArrowView = null;
+    let newspaperBackArrowView = null;
+
+    function startLoadingAnimation() {
+      const textToType = "LOADING Area53.MINIGAME...";
+      let i = 0;
+      (function typeChar() {
+        if (i < textToType.length) {
+          loadingText.textContent += textToType[i++];
+          setTimeout(typeChar, 80);
+        } else {
+          loadingInstructions.style.opacity = '1';
+          setTimeout(startGame, 2000);
+        }
+      })();
     }
-  }
-}
 
-// --- Canvas & Drawing ---
-function resizeCanvas() {
-    // Adjust canvas logical size based on its display size constraints
-    // This helps keep game elements proportional
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-    
-    // Use a fixed aspect ratio if desired, e.g., 768/1152
-    const targetAspectRatio = 768 / 1152;
-    let newWidth, newHeight;
-
-    if (displayWidth / displayHeight > targetAspectRatio) {
-        // Limited by height
-        newHeight = displayHeight;
-        newWidth = newHeight * targetAspectRatio;
-    } else {
-        // Limited by width
-        newWidth = displayWidth;
-        newHeight = newWidth / targetAspectRatio;
+    function startGame() {
+      loadingScreen.style.display = 'none';
+      gameContainer.classList.add('visible');
+      loadAssets(gameLoop);
     }
 
-    // Set internal canvas resolution (optional, can impact performance)
-    // Keep original if desired, or adjust:
-    // canvas.width = 768; 
-    // canvas.height = 1152;
-    
-    // Adjust drawing scale or element positions based on newWidth/newHeight if needed
-    // For now, we'll let the CSS object-fit handle visual scaling.
-}
+    function loadAssets(callback) {
+      let loaded = 0, total = Object.keys(assets).length;
+      for (let key in assets) {
+        const img = new Image();
+        img.src = `./${assets[key]}`;
+        img.onload = () => { images[key] = img; if (++loaded === total) callback(); };
+        img.onerror = () => { images[key] = null; if (++loaded === total) callback(); };
+      }
+    }
 
-window.addEventListener('resize', resizeCanvas);
+    function drawSprite(img, x, y, w, h) {
+      if (!img) return;
+      ctx.drawImage(img, x - w/2, y - h/2, w, h);
+    }
 
-function drawSprite(img, x, y, w, h) {
-  if (!img) return; // Don't draw if image failed to load
-  ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
-}
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (images.bg) ctx.drawImage(images.bg, 0, 0, canvas.width, canvas.height);
+      if (isReadingNewspaper) return;
+      if (images.newspaper) ctx.drawImage(images.newspaper, newspaper.x, newspaper.y, newspaper.width, newspaper.height);
+      if (!player.inCar) {
+        const sprite = (keys['w']||keys['a']||keys['s']||keys['d']) ? images.player_walk : images.player_idle;
+        drawSprite(sprite, player.x, player.y, player.w, player.h);
+      } else {
+        drawSprite(images.car, player.x, player.y, car.w, car.h);
+      }
+      if (car.visible) drawSprite(images.car, car.x, car.y, car.w, car.h);
+      if (enemy) drawSprite(images.enemy, enemy.x, enemy.y, 128, 128);
+    }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (images.bg) ctx.drawImage(images.bg, 0, 0, canvas.width, canvas.height);
-
-  if (isReadingNewspaper) {
-    // Handled by DOM elements now
-    return;
-  }
-
-  // Draw game elements
-  if (images.newspaper) ctx.drawImage(images.newspaper, newspaper.x, newspaper.y, newspaper.width, newspaper.height);
-
-  if (!player.inCar) {
-    const sprite = keys['w'] || keys['a'] || keys['s'] || keys['d'] ? images.player_walk : images.player_idle;
-    drawSprite(sprite, player.x, player.y, player.w, player.h);
-  } else {
-    drawSprite(images.car, player.x, player.y, car.w, car.h);
-  }
-
-  if (car.visible) {
-    drawSprite(images.car, car.x, car.y, car.w, car.h);
-  }
-
-  if (enemy) {
-    drawSprite(images.enemy, enemy.x, enemy.y, 128, 128);
-  }
-}
-
-// --- Game Logic ---
-function updatePlayer() {
+    function updatePlayer() {
   if (isReadingNewspaper) return;
-
-  const speed = player.speed;
-  const walking = keys['w'] || keys['a'] || keys['s'] || keys['d'];
-
+  const s = player.speed;
+  if (player.inCar) player.speed = 3; // or higher
   if (!player.inCar) {
-    if (keys['w']) player.y -= speed;
-    if (keys['s']) player.y += speed;
-    if (keys['a']) player.x -= speed;
-    if (keys['d']) player.x += speed;
-
-    // Keep player within canvas bounds (optional)
+    if (keys['w']) player.y -= s;
+    if (keys['s']) player.y += s;
+    if (keys['a']) player.x -= s;
+    if (keys['d']) player.x += s;
     player.x = Math.max(player.w / 2, Math.min(canvas.width - player.w / 2, player.x));
     player.y = Math.max(player.h / 2, Math.min(canvas.height - player.h / 2, player.y));
-
-    const dx = player.x - car.x;
-    const dy = player.y - car.y;
-    if (Math.sqrt(dx * dx + dy * dy) < 60) {
+    const dx = player.x - car.x, dy = player.y - car.y;
+    if (Math.hypot(dx, dy) < 60) {
       player.inCar = true;
       car.visible = false;
       enemy = { x: player.x, y: player.y + 400 };
       textbox.innerText = "What is that behind me?";
     }
   } else {
-    // Player is in car
-    if (keys['w']) player.y -= speed;
-    if (keys['s']) player.y += speed;
-    // Keep car X centered (or allow steering if implemented)
-    player.x = car.x; 
-
-    // Prevent car from going too far down
-    player.y = Math.min(canvas.height - car.h / 2, player.y); 
-
-    if (!enemy) {
-      enemy = { x: player.x, y: player.y + 400 };
-      textbox.innerText = "What is that behind me?";
-    }
-
-    // Update enemy position relative to car
-    if (enemy) enemy.y = player.y + 400;
-
-    // Check win condition (reaching top)
-    if (player.y < car.h / 2) { // Adjust threshold based on car height
-        console.log("Exiting minigame...");
-        // Potentially add a fade out or transition here?
-        window.location.href = "../index.html"; // Go back to main game/menu
-    }
-  }
-
-  // Animation frame
-  if (walking && !player.inCar) {
-    player.frame += 0.2;
-    if (player.frame >= 2) player.frame = 0;
-  } else {
-    player.frame = 0;
+    // Auto-move up
+    player.y -= s;
+    player.x = car.x;
+    if (player.y < car.h / 2) window.location.href = "../index.html";
   }
 }
 
-function updateEnemy() {
-  if (!enemy || isReadingNewspaper) return;
-  
-  if (player.inCar) {
-      // Enemy stays fixed distance behind car
-      enemy.x = player.x;
-      enemy.y = player.y + 300; // Adjust distance as needed
-  } else {
-      // Enemy chases player on foot
-      const dx = player.x - enemy.x;
-      const dy = player.y - enemy.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const speed = 1.5;
-      if (dist > 50) { // Keep some distance
-        enemy.x += (dx / dist) * speed;
-        enemy.y += (dy / dist) * speed;
+
+    function updateEnemy() {
+      if (!enemy || isReadingNewspaper) return;
+      if (player.inCar) {
+        enemy.x = player.x;
+        enemy.y = player.y + 300;
+      } else {
+        const dx = player.x - enemy.x, dy = player.y - enemy.y;
+        const d = Math.hypot(dx, dy);
+        if (d > 50) {
+          enemy.x += (dx / d) * 1.5;
+          enemy.y += (dy / d) * 1.5;
+        }
       }
-  }
-}
+    }
 
-function updateHoverState(mouseX, mouseY) {
-  if (isReadingNewspaper || player.inCar) {
-    newspaper.isHovered = false;
-    canvas.style.cursor = 'default';
-    return;
-  }
+    function updateHoverState(mx, my) {
+      if (isReadingNewspaper || player.inCar) {
+        newspaper.isHovered = false;
+        canvas.style.cursor = 'default';
+        return;
+      }
+      newspaper.isHovered =
+        mx >= newspaper.x && mx <= newspaper.x + newspaper.width &&
+        my >= newspaper.y && my <= newspaper.y + newspaper.height;
+      canvas.style.cursor = newspaper.isHovered ? 'pointer' : 'default';
+    }
 
-  // Simple AABB collision detection for hover
-  if (
-    mouseX >= newspaper.x - newspaper.width / 2 &&
-    mouseX <= newspaper.x + newspaper.width / 2 &&
-    mouseY >= newspaper.y - newspaper.height / 2 &&
-    mouseY <= newspaper.y + newspaper.height / 2
-  ) {
-    newspaper.isHovered = true;
-    canvas.style.cursor = 'pointer';
-  } else {
-    newspaper.isHovered = false;
-    canvas.style.cursor = 'default';
-  }
-}
-
-// --- Newspaper Handling ---
-function showNewspaper() {
-    if (!images[newspaperPages[currentPage]]) return; // Ensure image is loaded
-
-    isReadingNewspaper = true;
-    gameContainer.classList.add('newspaper-view'); // Dim background
-
-    // Create image view if it doesn't exist
-    if (!newspaperImageView) {
+    function showNewspaper() {
+      if (!images[newspaperPages[currentPage]]) return;
+      isReadingNewspaper = true;
+      gameContainer.classList.add('newspaper-view');
+      if (!newspaperImageView) {
         newspaperImageView = new Image();
         newspaperImageView.className = 'newspaper-image';
         newspaperArrowView = new Image();
         newspaperArrowView.className = 'newspaper-arrow';
         newspaperArrowView.src = images.arrow.src;
+        newspaperBackArrowView = new Image();
+        newspaperBackArrowView.className = 'newspaper-back-arrow';
+        newspaperBackArrowView.src = images.arrow.src;
 
         newspaperArrowView.onclick = () => {
-            currentPage = (currentPage + 1) % newspaperPages.length;
-            if (images[newspaperPages[currentPage]]) {
-                newspaperImageView.src = images[newspaperPages[currentPage]].src;
-            } else {
-                console.error("Next newspaper page image not loaded!")
-            }
+          currentPage = (currentPage + 1) % newspaperPages.length;
+          newspaperImageView.src = images[newspaperPages[currentPage]].src;
+          descBox.textContent = newspaperDescriptions[newspaperPages[currentPage]] || "No description available.";
+        };
+        newspaperBackArrowView.onclick = () => {
+          currentPage = (currentPage - 1 + newspaperPages.length) % newspaperPages.length;
+          newspaperImageView.src = images[newspaperPages[currentPage]].src;
+          descBox.textContent = newspaperDescriptions[newspaperPages[currentPage]] || "No description available.";
         };
 
         gameContainer.appendChild(newspaperImageView);
         gameContainer.appendChild(newspaperArrowView);
+        gameContainer.appendChild(newspaperBackArrowView);
+      }
+      newspaperImageView.src = images[newspaperPages[currentPage]].src;
+      newspaperImageView.style.display = 'block';
+      newspaperArrowView.style.display = 'block';
+      newspaperBackArrowView.style.display = 'block';
+      descBox.style.display = 'block';
+      descBox.textContent = newspaperDescriptions[newspaperPages[currentPage]] || "No description available.";
+      closeInstr.style.display = 'block';
     }
 
-    // Set initial page and make visible
-    newspaperImageView.src = images[newspaperPages[currentPage]].src;
-    newspaperImageView.style.display = 'block';
-    newspaperArrowView.style.display = 'block';
-}
+    function hideNewspaper() {
+      isReadingNewspaper = false;
+      gameContainer.classList.remove('newspaper-view');
+      if (newspaperImageView) newspaperImageView.style.display = 'none';
+      if (newspaperArrowView) newspaperArrowView.style.display = 'none';
+      if (newspaperBackArrowView) newspaperBackArrowView.style.display = 'none';
+      descBox.style.display = 'none';
+      closeInstr.style.display = 'none';
+    }
 
-function hideNewspaper() {
-    isReadingNewspaper = false;
-    gameContainer.classList.remove('newspaper-view');
-    if (newspaperImageView) newspaperImageView.style.display = 'none';
-    if (newspaperArrowView) newspaperArrowView.style.display = 'none';
-}
+    function gameLoop() {
+      updatePlayer();
+      updateEnemy();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
 
-// --- Game Loop ---
-function gameLoop() {
-  updatePlayer();
-  updateEnemy();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
+    window.addEventListener('keydown', e => {
+      const k = e.key.toLowerCase();
+      if (k === 'escape' && isReadingNewspaper) hideNewspaper();
+      keys[k] = true;
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key.toLowerCase()] = false;
+    });
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+      updateHoverState(mx, my);
+    });
+    canvas.addEventListener('click', () => {
+      if (!isReadingNewspaper && newspaper.isHovered) showNewspaper();
+    });
 
-// --- Input Handling ---
-window.addEventListener('keydown', e => {
-  const key = e.key.toLowerCase();
-  if (key === 'escape') {
-      if (isReadingNewspaper) {
-          hideNewspaper();
-      }
-  }
-  keys[key] = true;
-});
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-canvas.addEventListener('mousemove', e => {
-  const rect = canvas.getBoundingClientRect();
-  // Scale mouse coordinates to canvas coordinates if canvas is scaled
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const mouseX = (e.clientX - rect.left) * scaleX;
-  const mouseY = (e.clientY - rect.top) * scaleY;
-  updateHoverState(mouseX, mouseY);
-});
-
-canvas.addEventListener('click', e => {
-  if (isReadingNewspaper) {
-      // Arrow click is handled by its own onclick event
-      return;
-  } else if (newspaper.isHovered) {
-      showNewspaper();
-  }
-});
-
-// --- Initialization ---
-startLoadingAnimation(); // Start with loading screen
-
-</script>
+    startLoadingAnimation();
+  </script>
 </body>
 </html>
