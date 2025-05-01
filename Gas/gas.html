@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gas Station Animation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      background: url('gas_station.webp');
+      background-size: cover;
+      display: block;
+      border: 2px solid #333;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="1024" height="576"></canvas>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const background = new Image();
+  background.src = 'gas_station.webp';
+
+  const car = new Image();
+  car.src = 'jeep_charokee.png';
+
+  const playerIdle = new Image();
+  playerIdle.src = 'player_idle.png';
+
+  const playerWalk = new Image();
+  playerWalk.src = 'player_walk.png';
+
+  const enemy = new Image();
+  enemy.src = 'enemy.png';
+
+  let carX = 340;
+  let carY = 400;
+
+  let playerX = carX + 20;
+  let playerY = 460;
+  let playerWalking = false;
+  let playerVisible = true;
+  let playerInCar = false;
+
+  let enemyX = -100;
+  let enemyY = 460;
+  let enemyVisible = false;
+
+  let stage = 0;
+  let timer = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+    // Car
+    ctx.drawImage(car, carX, carY, 100, 150);
+
+    // Player
+    if (playerVisible) {
+      const sprite = playerWalking ? playerWalk : playerIdle;
+      ctx.drawImage(sprite, playerX, playerY, 64, 128);
+    }
+
+    // Enemy
+    if (enemyVisible) {
+      ctx.drawImage(enemy, enemyX, enemyY, 64, 128);
+    }
+  }
+
+  function update() {
+    timer++;
+
+    switch(stage) {
+      case 0: // Player walks right
+        playerWalking = true;
+        playerX += 2;
+        if (playerX >= 640) stage++;
+        break;
+
+      case 1: // Player walks up
+        playerY -= 2;
+        if (playerY <= 390) {
+          playerWalking = false;
+          playerVisible = false;
+          stage++;
+          timer = 0;
+        }
+        break;
+
+      case 2: // Wait in station
+        if (timer > 60) {
+          stage++;
+          enemyVisible = true;
+          enemyX = -100;
+          enemyY = 460;
+        }
+        break;
+
+      case 3: // Enemy walks in from left
+        enemyX += 2;
+        if (enemyX >= carX + 10) {
+          stage++;
+          timer = 0;
+        }
+        break;
+
+      case 4: // Enemy in car, pause
+        if (timer > 40) {
+          enemyVisible = false;
+          playerX = 640;
+          playerY = 390;
+          playerVisible = true;
+          stage++;
+        }
+        break;
+
+      case 5: // Player walks down
+        playerWalking = true;
+        playerY += 2;
+        if (playerY >= 460) stage++;
+        break;
+
+      case 6: // Player walks left
+        playerX -= 2;
+        if (playerX <= carX + 20) {
+          playerWalking = false;
+          playerVisible = false;
+          playerInCar = true;
+          stage++;
+        }
+        break;
+
+      case 7: // Car drives away
+        carY -= 2;
+        if (carY + 150 < 0) {
+          stage++;
+        }
+        break;
+
+      case 8: // End state
+        break;
+    }
+
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  background.onload = () => {
+    draw();
+    update();
+  };
+</script>
+</body>
+</html>
