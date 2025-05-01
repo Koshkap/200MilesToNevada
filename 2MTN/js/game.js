@@ -26,6 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Game screen elements
     const gameVideo = document.getElementById('game-video');
+    // Set the main front view video to the new file
+    if (gameVideo.src.includes('Generated File April 29, 2025 - 3_20PM.mp4') || gameVideo.getAttribute('src')?.includes('Generated File April 29, 2025 - 3_20PM.mp4')) {
+        gameVideo.src = 'MainVid.mp4';
+    } else if (!gameVideo.getAttribute('src')) {
+        // If no src is set, set it explicitly
+        gameVideo.src = 'MainVid.mp4';
+    }
     const lookBackVideo = document.getElementById('look-back-video');
     const statsContainer = document.getElementById('stats-container');
     const energyBar = document.getElementById('energy-bar');
@@ -90,28 +97,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Game state
     let gameState = {
-        energy: 100,
-        boredom: 0,
         milesLeft: 200,
-        lastMileMarker: 0,
-        gameStartTime: 0,
-        alienCar: false,
-        alienCarTimeout: null,
-        carChecked: false,
+        energy: 100, // Start and stay at 100
+        boredom: 0,  // Start at 0 and increase
         brakeCheckActive: false,
-        // First mirror event flags
+        alienCar: false,
+        carChecked: false,
+        gameStartTime: null,
+        lastMilesUpdateTime: null, // Timer for miles update
+        lastBoredomUpdateTime: null, // Timer for boredom update - RESTORED
+        lastMileMarker: 200,
+        alienCarTimeout: null,
         isBrightFlashEventActive: false,
         isAlienInMirror: false,
         mirrorEventTimeout: null,
-        // Second mirror event flags
         isSecondEventActive: false,
         isSecondEventAlienSeen: false,
-        isRedFlashActive: false,
         secondEventTimeout: null,
-        // Third event flags (Markiplier beam)
+        isRedFlashActive: false,
         isThirdEventActive: false,
         thirdEventTimeout: null,
-        thirdEventAutoResolveTimeout: null
+        thirdEventAutoResolveTimeout: null,
+        thirdEventMarkiplierClicked: false,
+        isPhoneActive: false,
+        lastPhoneBoredomUpdateTime: null
     };
 
     let musicStarted = false; // Flag to track if music has successfully started
@@ -325,6 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Starting game...");
         showScreen(gameScreen);
         
+        // Create all the boxes
+        fixedBox = createFixedBox();
+        fixedBox2 = createSecondFixedBox(); 
+        fixedBox3 = createThirdFixedBox(); // Create the third fixed box
+        draggableBox = createDraggableBox();
+        
         originalLookBackSrc = lookBackVideo.src; // Store original src
         const startRate = 0.1;
         const endRate = 1.0;
@@ -354,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Animation function to increase playback rate
         function accelerateVideo(timestamp) {
+            ambientSound.volume = 0;
             if (!startTime) startTime = timestamp;
             const elapsed = timestamp - startTime;
 
@@ -393,8 +409,48 @@ document.addEventListener('DOMContentLoaded', () => {
         readyForDialog[0] = true;
         createDialog("200 miles to nevada left . . .    Outrun the Alien Apocalypse to Area-51 Play games on your phone to stay sane. Brake-Check crazy driversㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  Check your mirrors, and survive . . .");
 
+        
+
         const accelerationDuration = 5000; // Match the duration used in accelerateVideo
         gameState.mirrorEventTimeout = setTimeout(triggerBrightFlashEvent, accelerationDuration + 10000);
+    }
+
+    // Define radio station songs and current index outside the function
+    // so the state persists between plays.
+    const radioStation1Songs = [
+        // Add the path to your first song here if it's different from the others
+        "Radio/Orion.mp3", // Assuming this is the first song
+        "Radio/Podcastshort - 4_30_25, 9.53 AM.mp3",
+        "Radio/Rosetta Stoned.mp3"
+        // Add more song paths here
+    ];
+    let currentRadioSongIndex = 0;
+    let radioSound = null; // Initialize radioSound variable
+
+    function playRadio() {
+        radioSound = document.getElementById("radio-station-1");
+        radioSound.play();
+        currentRadioSongIndex = 0;
+        radioSound.addEventListener("ended", () => {
+            console.log("Song ended, playing next.");
+            currentRadioSongIndex++;
+            // Loop back to the beginning if we've gone past the last song
+            if (currentRadioSongIndex >= radioStation1Songs.length) {
+                currentRadioSongIndex = 0;
+            }
+            radioSound.src = radioStation1Songs[currentRadioSongIndex];
+            radioSound.load(); // Load the new source
+            radioSound.play().catch(e => console.error("Radio play failed:", e));
+        });
+    }
+
+    // Function to stop the radio if needed
+    function stopRadio() {
+        if (radioSound && !radioSound.paused) {
+            radioSound.pause();
+            radioSound.currentTime = 0; // Optional: Reset to beginning
+            console.log("Radio stopped.");
+        }
     }
 
     // --- Mirror Event Logic ---
@@ -703,64 +759,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Game loop - updates stats and UI
     function gameLoop(timestamp) { // Pass timestamp
-        if (!gameState.gameStartTime) gameState.gameStartTime = timestamp; // Initialize start time if needed
-        if (!lastStatUpdateTime) lastStatUpdateTime = timestamp; // Initialize last update time
-
-        if (gameState.milesLeft <= 0) {
-            endGame(true); // Win
-            return;
+        if (!gameState.gameStartTime) {
+            gameState.gameStartTime = timestamp;
+            gameState.lastMilesUpdateTime = timestamp;
+            gameState.lastBoredomUpdateTime = timestamp;
+            gameState.lastPhoneBoredomUpdateTime = timestamp;
         }
-        
-        // Remove loss conditions - keep tracking stats but don't end the game
-        // if (gameState.energy <= 0 || gameState.boredom >= 100) {
-        //     endGame(false); // Lose
-        //     return;
-        // }
-        
-        // Update miles left (at 60 miles per minute or 1 mile per second)
-        // gameState.milesLeft = Math.max(0, 200 - Math.floor(totalElapsedSecs)); // Removed
-        
-        // Show mile marker every 60 miles
-        // const currentMarker = 200 - Math.floor(gameState.milesLeft / 60) * 60; // Removed
-        // if (currentMarker !== gameState.lastMileMarker && gameState.milesLeft % 60 === 0 && gameState.milesLeft < 200) { // Removed
-        //     gameState.lastMileMarker = currentMarker; // Removed
-        //     showMileMarker(currentMarker); // Removed
-        // } // Removed
 
-        // --- Slower Stat Updates ---
-        const delta = timestamp - lastStatUpdateTime;
-        if (delta >= STAT_UPDATE_INTERVAL) {
-            const updatesToApply = Math.floor(delta / STAT_UPDATE_INTERVAL);
-            
-            // Decrease energy over time (scaled by number of intervals missed)
-            // Adjust rate as needed (0.1 per frame was fast, maybe 0.5 per 500ms?)
-            gameState.energy = Math.max(0, gameState.energy - 0.5 * updatesToApply); 
-            
-            // Increase boredom over time (scaled by number of intervals missed)
-            // Adjust rate (0.05 per frame was fast, maybe 0.2 per 500ms?)
-            gameState.boredom = Math.min(100, gameState.boredom + 0.2 * updatesToApply);
-            
-            lastStatUpdateTime = timestamp; // Reset timer
+        if (gameState.milesLeft <= 0 && !gameState.isThirdEventActive) {
+             console.log("Reached 0 miles.");
+             endGame(true);
+             return;
         }
-        // --- End Slower Stat Updates ---
-        
-        // Update UI (happens every frame for smoothness)
+
+        if (gameState.boredom >= 100) {
+            endGame("WasBored");
+        }
+
+        if (!gameState.isThirdEventActive && !gameState.isSecondEventActive) { 
+            // triggers first event
+        }
+
+        // --- Stat Updates based on Time ---
+        const MILES_INTERVAL = 5000; // 5 seconds in milliseconds
+        const BOREDOM_INCREASE_INTERVAL = 3000; // 3 seconds in milliseconds - RESTORED
+        const PHONE_BOREDOM_DECREASE_INTERVAL = 4000; // <<<< CHANGED: 4 seconds
+        // Update Miles
+        const timeSinceLastMileUpdate = timestamp - gameState.lastMilesUpdateTime;
+        if (timeSinceLastMileUpdate >= MILES_INTERVAL && gameState.milesLeft > 0) {
+            const milesToDecrease = Math.floor(timeSinceLastMileUpdate / MILES_INTERVAL);
+            gameState.milesLeft = Math.max(0, gameState.milesLeft - milesToDecrease);
+            gameState.lastMilesUpdateTime += milesToDecrease * MILES_INTERVAL;
+            console.log(`Miles Left: ${gameState.milesLeft}`);
+        }
+
+        // Update Boredom based on phone interaction
+        if (gameState.isPhoneActive) {
+            // Phone is active - DECREASE boredom
+            const timeSinceLastPhoneBoredomUpdate = timestamp - gameState.lastPhoneBoredomUpdateTime;
+            if (timeSinceLastPhoneBoredomUpdate >= PHONE_BOREDOM_DECREASE_INTERVAL && gameState.boredom > 0) {
+                const updatesToApply = Math.floor(timeSinceLastPhoneBoredomUpdate / PHONE_BOREDOM_DECREASE_INTERVAL);
+                // VVVV CHANGED: Decrease by 1 per interval
+                gameState.boredom = Math.max(0, gameState.boredom - updatesToApply);
+                gameState.lastPhoneBoredomUpdateTime += updatesToApply * PHONE_BOREDOM_DECREASE_INTERVAL;
+                // console.log(`Phone Active - Boredom Decreased: ${gameState.boredom}`);
+            }
+        } else {
+            // Phone is NOT active - INCREASE boredom
+            const timeSinceLastBoredomUpdate = timestamp - gameState.lastBoredomUpdateTime;
+            if (timeSinceLastBoredomUpdate >= BOREDOM_INCREASE_INTERVAL && gameState.boredom < 100) {
+                const boredomToIncrease = Math.floor(timeSinceLastBoredomUpdate / BOREDOM_INCREASE_INTERVAL);
+                gameState.boredom = Math.min(100, gameState.boredom + boredomToIncrease);
+                gameState.lastBoredomUpdateTime += boredomToIncrease * BOREDOM_INCREASE_INTERVAL;
+                // console.log(`Phone Inactive - Boredom Increased: ${gameState.boredom}`);
+            }
+        }
+
+        // Energy update logic remains removed, as energy should stay at 100.
+
+        // --- Markiplier Beam Button Visibility ---
+        if (gameState.milesLeft === 150 || gameState.milesLeft === 100 || gameState.milesLeft === 50 || gameState.milesLeft === 0) {
+             if(markiplierBeamButton.classList.contains('hidden')) {
+                 console.log(`Showing Markiplier Beam button at ${gameState.milesLeft} miles.`);
+                 markiplierBeamButton.classList.remove('hidden');
+             }
+        } else {
+            if (!markiplierBeamButton.classList.contains('hidden')) {
+                markiplierBeamButton.classList.add('hidden');
+            }
+        }
+
+        // Update UI
         updateUI();
-        
+
         // Continue game loop
-        requestAnimationFrame(gameLoop);
+        if (gameState.milesLeft > 0 || gameState.isThirdEventActive) {
+             requestAnimationFrame(gameLoop);
+        }
     }
-    
+
     // Update game UI based on current state
     function updateUI() {
         // Update values
-        energyValue.textContent = Math.floor(gameState.energy); // Removed %
-        boredomValue.textContent = Math.floor(gameState.boredom); // Removed %
-        milesValue.textContent = gameState.milesLeft; // Display fixed value
+        energyValue.textContent = gameState.energy; // Always 100
+        boredomValue.textContent = Math.floor(gameState.boredom); // Update boredom display
+        milesValue.textContent = gameState.milesLeft;
 
-        // Remove bar updates
-        // energyBar.style.width = `${gameState.energy}%`;
-        // boredomBar.style.width = `${gameState.boredom}%`;
+        // Ensure button visibility reflects state
+        const shouldShowBeam = gameState.milesLeft === 150 || gameState.milesLeft === 100 || gameState.milesLeft === 50 || gameState.milesLeft === 0;
+        if (shouldShowBeam) {
+            markiplierBeamButton.classList.remove('hidden');
+        } else {
+            markiplierBeamButton.classList.add('hidden');
+        }
     }
     
     // Show mile marker notification
@@ -789,7 +880,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // If player doesn't react in 5 seconds, they lose energy
         setTimeout(() => {
             if (gameState.alienCar && !gameState.carChecked) {
-                gameState.energy = Math.max(0, gameState.energy - 15);
+                // gameState.energy = Math.max(0, gameState.energy - 15); // REMOVED ENERGY DECREASE
                 gameState.alienCar = false;
                 gameVideo.style.filter = "none";
                 scheduleAlienCar(); // Schedule next encounter
@@ -814,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Player has seen the alien in the mirror - resolve the event
             console.log("Brake check resolving mirror event (alien seen).");
             resolveMirrorAlienEvent();
-            gameState.energy = Math.min(100, gameState.energy + 5); // Reward
+            // gameState.energy = Math.min(100, gameState.energy + 5); // REMOVED ENERGY INCREASE (Reward)
         } else if (gameState.isBrightFlashEventActive || gameState.isSecondEventActive) {
             // Mirror event is active, but player hasn't looked back yet
             console.log("Brake check ineffective - need to look back first.");
@@ -826,8 +917,8 @@ document.addEventListener('DOMContentLoaded', () => {
             startBrakeCheck(); // Handles pausing video, etc.
             if (!gameState.alienCar) {
                 // Penalty for checking a non-alien car
-                gameState.energy = Math.max(0, gameState.energy - 5);
-                gameState.boredom = Math.min(100, gameState.boredom + 5);
+                // gameState.energy = Math.max(0, gameState.energy - 5); // REMOVED ENERGY DECREASE
+                gameState.boredom = Math.min(100, gameState.boredom + 5); // Keep boredom penalty for now? Or remove?
             } else {
                 // Correctly checked an alien car
                 gameState.carChecked = true;
@@ -904,41 +995,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Finish the brake check effect - RESUME VIDEO
     function finishBrakeCheck() {
-        // Resume the video
-        gameVideo.play().catch(error => {
-            console.error("Error resuming video after brake check:", error);
-            // Handle potential error if video can't play
-        });
-        
-        brakeCheckButton.disabled = false;
-        gameState.brakeCheckActive = false;
-        
-        // Stop any honking if it was going
-        if (!honkSound.paused) {
-            honkSound.pause();
-            honkSound.currentTime = 0;
-        }
-            
-        // Process the result (alien check, etc.)
+        // Only reward if checking an actual alien car
         if (gameState.alienCar && gameState.carChecked) {
-            // When checking an alien car, show visual effect and automatically resolve
-            // No need for blast button anymore
-            gameVideo.style.filter = "brightness(1.5) contrast(1.2)";
-            
-            // Give player rewards immediately (same as blast button used to give)
-            gameState.energy = Math.min(100, gameState.energy + 10); // Energy boost
-            gameState.boredom = Math.max(0, gameState.boredom - 15); // Reduce boredom
-            
-            // Reset after a short visual effect
-            setTimeout(() => {
-                resetCarEncounter();
-            }, 1000);
-        } else if (gameState.alienCar && !gameState.carChecked) {
-            // If an alien appeared but wasn't checked during the pause, reset it now
-            gameVideo.style.filter = "none";
-            resetCarEncounter();
+            // Correct check
+            // gameState.energy = Math.min(100, gameState.energy + 10); // REMOVED ENERGY INCREASE (Energy boost)
+            // Reduce boredom slightly for successful action
+            gameState.boredom = Math.max(0, gameState.boredom - 10);
         }
-        // Note: No timeout needed here as video resumes instantly
+        
+        // Reset encounter state AFTER checking reward/penalty
+        resetCarEncounter();
+
+        // Restart game video
+        gameVideo.play().catch(e => console.error("Game video play failed after brake check:", e));
+        gameState.brakeCheckActive = false;
     }
     
     // Handle blast button - This event listener remains but blast button is never shown now
@@ -961,12 +1031,8 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.alienCar = false;
         gameState.carChecked = false;
         gameVideo.style.filter = "none";
-        blastButton.classList.add('hidden'); // This ensures blast button stays hidden
-        
-        // Only schedule next encounter if not in brake check
-        if (!gameState.brakeCheckActive) {
-            scheduleAlienCar();
-        }
+        // gameState.energy = Math.min(100, gameState.energy + 10); // REMOVED ENERGY INCREASE (Energy boost) - Seems redundant here anyway
+        scheduleAlienCar(); // Schedule the next one
     }
     
     // End game function
@@ -998,8 +1064,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if(gameVideo.paused) {
             gameVideo.play().catch(()=>{}); // Attempt to play, ignore error on end screen
         }
-
-        if (isWin) {
+        if (isWin === "WasBored") {
+            alert("You swerved into oncoming traffic out of boredom. Game Over.");
+        } else if (isWin) {
             alert("Congratulations! You've reached Area 53!");
         } else {
             // Never show losing message - player can only win
@@ -1335,6 +1402,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 dialog.onclick = () => {
                     if (index >= messageArray.length) {
                         dialog.style.display = 'none';
+                        playRadio();
+                        readyForDialog[0] = false;
                     }
                 };
                 return;
@@ -1367,4 +1436,407 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     console.log('Game script loaded. Waiting for start.');
+
+    // Create a fixed transparent box for the front view
+    function createFixedBox() {
+        // Create image element that will be toggled
+        const toggleImage = document.createElement('img');
+        toggleImage.id = 'toggle-image';
+        toggleImage.src = 'image-removebg-preview.png';
+        toggleImage.style.position = 'absolute';
+        toggleImage.style.left = '50%';
+        toggleImage.style.top = '50%';
+        toggleImage.style.transform = 'translate(-50%, -50%)';
+        toggleImage.style.maxWidth = '80%';
+        toggleImage.style.maxHeight = '80%';
+        toggleImage.style.zIndex = '999';
+        toggleImage.style.display = 'none'; // Initially hidden
+        toggleImage.style.pointerEvents = 'none'; // Don't block clicks
+        
+        // Add image to game screen
+        gameScreen.appendChild(toggleImage);
+        
+        // Create the box element
+        const box = document.createElement('div');
+        box.id = 'fixed-box';
+        box.style.position = 'absolute';
+        box.style.width = '310px';
+        box.style.height = '110px';
+        box.style.left = '1140px';
+        box.style.top = '443px';
+        box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; // Very slight background for visibility
+        box.style.border = '2px solid #00ff00';
+        box.style.zIndex = '1000';
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.justifyContent = 'center';
+        box.style.alignItems = 'center';
+        box.style.color = '#00ff00';
+        box.style.fontFamily = 'monospace';
+        box.style.fontSize = '12px';
+        box.style.userSelect = 'none';
+        box.style.pointerEvents = 'auto'; // Make it clickable
+        box.style.cursor = 'pointer'; // Show pointer cursor on hover
+        gameState.isPhoneActive = false;
+        // Create the info display
+        const infoDisplay = document.createElement('div');
+        infoDisplay.id = 'box-info';
+        infoDisplay.innerHTML = `
+            Size: 310x110<br>
+            Pos: 1140,443
+        `;
+        box.appendChild(infoDisplay);
+        
+        // Track toggle state
+        let imageVisible = false;
+        // Track original and alternate sizes
+        const originalSize = { width: '310px', height: '110px', left: '1140px', top: '443px' };
+        const alternateSize = { width: '383px', height: '23px', left: '55px', top: '712px' };
+        let isAlternateSize = false;
+        
+        // Add click event
+        box.addEventListener('click', () => {
+            
+            console.log('Box clicked!');
+            
+            if (gameState.isPhoneActive) {
+                gameState.isPhoneActive = false;
+            } else {
+                gameState.isPhoneActive = true;
+            }
+            // Toggle image visibility
+            imageVisible = !imageVisible;
+            toggleImage.style.display = imageVisible ? 'block' : 'none';
+            
+            // Toggle box size and position
+            isAlternateSize = !isAlternateSize;
+            if (isAlternateSize) {
+                box.style.width = alternateSize.width;
+                box.style.height = alternateSize.height;
+                box.style.left = alternateSize.left;
+                box.style.top = alternateSize.top;
+            } else {
+                box.style.width = originalSize.width;
+                box.style.height = originalSize.height;
+                box.style.left = originalSize.left;
+                box.style.top = originalSize.top;
+            }
+            
+            // Update the info display
+            infoDisplay.innerHTML = isAlternateSize ? 
+                `Size: 383x23<br>Pos: 55,712` : 
+                `Size: 310x110<br>Pos: 1140,443`;
+            
+            // Flash the box as visual feedback
+            box.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
+            setTimeout(() => {
+                box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+            }, 200);
+        });
+        
+        // Add the box to the game screen
+        gameScreen.appendChild(box);
+        
+        // Function to show/hide box based on conditions
+        function updateBoxVisibility() {
+            // Only show when in front view (not looking back or during special events)
+            if (isLookingBack || gameState.isThirdEventActive) {
+                box.style.display = 'none';
+                // Also hide the image when not in front view
+                toggleImage.style.display = 'none';
+            } else {
+                box.style.display = 'flex';
+                // Only show the image if it was previously visible and we're returning to front view
+                if (imageVisible) {
+                    toggleImage.style.display = 'block';
+                }
+            }
+        }
+        
+        // Set up visibility checks
+        setInterval(updateBoxVisibility, 100);
+        
+        // Return the box reference
+        return box;
+    }
+    
+    // Variable to store box reference
+    let fixedBox;
+    
+    // Create a draggable and resizable box
+    function createDraggableBox() {
+        // Create the box element
+        const box = document.createElement('div');
+        box.id = 'draggable-box';
+        box.style.position = 'absolute';
+        box.style.width = '150px';
+        box.style.height = '150px';
+        box.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+        box.style.border = '2px solid #00ff00';
+        box.style.zIndex = '1000';
+        box.style.cursor = 'move';
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.justifyContent = 'center';
+        box.style.alignItems = 'center';
+        box.style.color = '#00ff00';
+        box.style.fontFamily = 'monospace';
+        box.style.fontSize = '12px';
+        box.style.userSelect = 'none';
+        
+        // Create the info display
+        const infoDisplay = document.createElement('div');
+        infoDisplay.id = 'box-info';
+        box.appendChild(infoDisplay);
+        
+        // Create resize handle
+        const resizeHandle = document.createElement('div');
+        resizeHandle.style.position = 'absolute';
+        resizeHandle.style.width = '10px';
+        resizeHandle.style.height = '10px';
+        resizeHandle.style.right = '0';
+        resizeHandle.style.bottom = '0';
+        resizeHandle.style.backgroundColor = '#00ff00';
+        resizeHandle.style.cursor = 'nwse-resize';
+        box.appendChild(resizeHandle);
+        
+        // Center the box in the game screen
+        const centerBox = () => {
+            const gameScreenRect = gameScreen.getBoundingClientRect();
+            box.style.left = (gameScreenRect.width / 2 - 75) + 'px';
+            box.style.top = (gameScreenRect.height / 2 - 75) + 'px';
+            updateInfoDisplay();
+        };
+        
+        // Add the box to the game screen
+        gameScreen.appendChild(box);
+        centerBox();
+        
+        // Variables for dragging
+        let isDragging = false;
+        let isResizing = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let boxStartX = 0;
+        let boxStartY = 0;
+        let boxStartWidth = 150;
+        let boxStartHeight = 150;
+        
+        // Update info display
+        function updateInfoDisplay() {
+            const boxRect = box.getBoundingClientRect();
+            const gameScreenRect = gameScreen.getBoundingClientRect();
+            const relX = boxRect.left - gameScreenRect.left;
+            const relY = boxRect.top - gameScreenRect.top;
+            
+            infoDisplay.innerHTML = `
+                Size: ${Math.round(boxRect.width)}x${Math.round(boxRect.height)}<br>
+                Pos: ${Math.round(relX)},${Math.round(relY)}
+            `;
+        }
+        
+        // Event listeners for dragging
+        box.addEventListener('mousedown', (e) => {
+            if (e.target === resizeHandle) {
+                // Resize logic
+                isResizing = true;
+                boxStartWidth = box.offsetWidth;
+                boxStartHeight = box.offsetHeight;
+            } else {
+                // Drag logic
+                isDragging = true;
+                box.style.cursor = 'grabbing';
+            }
+            
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            boxStartX = box.offsetLeft;
+            boxStartY = box.offsetTop;
+            
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                
+                box.style.left = (boxStartX + dx) + 'px';
+                box.style.top = (boxStartY + dy) + 'px';
+                
+                updateInfoDisplay();
+            } else if (isResizing) {
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                
+                const newWidth = Math.max(50, boxStartWidth + dx);
+                const newHeight = Math.max(50, boxStartHeight + dy);
+                
+                box.style.width = newWidth + 'px';
+                box.style.height = newHeight + 'px';
+                
+                updateInfoDisplay();
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            isResizing = false;
+            box.style.cursor = 'move';
+        });
+        
+        // Update on window resize
+        window.addEventListener('resize', updateInfoDisplay);
+        
+        // Function to show/hide the box based on conditions
+        function updateBoxVisibility() {
+            // Only show when in front view (not looking back or during special events)
+            if (isLookingBack || gameState.isThirdEventActive) {
+                box.style.display = 'none';
+            } else {
+                box.style.display = 'flex';
+            }
+        }
+        
+        // Set up visibility checks
+        setInterval(updateBoxVisibility, 100);
+        
+        // Return the box for reference
+        return box;
+    }
+    
+    // Variable to store box reference
+    let draggableBox;
+
+    // Create a second fixed transparent box for the front view
+    function createSecondFixedBox() {
+        // Create the box element
+        const box = document.createElement('div');
+        box.id = 'fixed-box-2';
+        box.style.position = 'absolute';
+        box.style.width = '142px';
+        box.style.height = '89px';
+        box.style.left = '1181px';
+        box.style.top = '991px';
+        box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; // Very slight background for visibility
+        box.style.border = '2px solid #00ff00';
+        box.style.zIndex = '1000';
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.justifyContent = 'center';
+        box.style.alignItems = 'center';
+        box.style.color = '#00ff00';
+        box.style.fontFamily = 'monospace';
+        box.style.fontSize = '12px';
+        box.style.userSelect = 'none';
+        box.style.pointerEvents = 'auto'; // Make it clickable
+        box.style.cursor = 'pointer'; // Show pointer cursor on hover
+        
+        // Create the info display
+        const infoDisplay = document.createElement('div');
+        infoDisplay.id = 'box-info-2';
+        infoDisplay.innerHTML = `
+            Size: 142x89<br>
+            Pos: 1181,991
+        `;
+        box.appendChild(infoDisplay);
+        
+        // Add click event
+        box.addEventListener('click', () => {
+            console.log('Box 2 clicked!');
+            // Flash the box as visual feedback
+            box.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
+            setTimeout(() => {
+                box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+            }, 200);
+        });
+        
+        // Add the box to the game screen
+        gameScreen.appendChild(box);
+        
+        // Function to show/hide box based on conditions
+        function updateBoxVisibility() {
+            // Only show when in front view (not looking back or during special events)
+            if (isLookingBack || gameState.isThirdEventActive) {
+                box.style.display = 'none';
+            } else {
+                box.style.display = 'flex';
+            }
+        }
+        
+        // Set up visibility checks
+        setInterval(updateBoxVisibility, 100);
+        
+        // Return the box reference
+        return box;
+    }
+
+    // Variable to store the second box reference
+    let fixedBox2;
+
+    // Create a third fixed transparent box for the front view
+    function createThirdFixedBox() {
+        // Create the box element
+        const box = document.createElement('div');
+        box.id = 'fixed-box-3';
+        box.style.position = 'absolute';
+        box.style.width = '425px';
+        box.style.height = '75px';
+        box.style.left = '1090px';
+        box.style.top = '877px';
+        box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; // Very slight background for visibility
+        box.style.border = '2px solid #00ff00';
+        box.style.zIndex = '1000';
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.justifyContent = 'center';
+        box.style.alignItems = 'center';
+        box.style.color = '#00ff00';
+        box.style.fontFamily = 'monospace';
+        box.style.fontSize = '12px';
+        box.style.userSelect = 'none';
+        box.style.pointerEvents = 'auto'; // Make it clickable
+        box.style.cursor = 'pointer'; // Show pointer cursor on hover
+        
+        // Create the info display
+        const infoDisplay = document.createElement('div');
+        infoDisplay.id = 'box-info-3';
+        infoDisplay.innerHTML = `
+            Size: 425x75<br>
+            Pos: 1090,877
+        `;
+        box.appendChild(infoDisplay);
+        
+        // Add click event
+        box.addEventListener('click', () => {
+            console.log('Box 3 clicked!');
+            // Flash the box as visual feedback
+            box.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
+            setTimeout(() => {
+                box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+            }, 200);
+        });
+        
+        // Add the box to the game screen
+        gameScreen.appendChild(box);
+        
+        // Function to show/hide box based on conditions
+        function updateBoxVisibility() {
+            // Only show when in front view (not looking back or during special events)
+            if (isLookingBack || gameState.isThirdEventActive) {
+                box.style.display = 'none';
+            } else {
+                box.style.display = 'flex';
+            }
+        }
+        
+        // Set up visibility checks
+        setInterval(updateBoxVisibility, 100);
+        
+        // Return the box reference
+        return box;
+    }
+    
+    // Variable to store the third box reference
+    let fixedBox3;
 }); 
