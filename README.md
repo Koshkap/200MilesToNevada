@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/1bbde192-7bb7-4417-a6dd-4266a2945720)
+![image](https://github.com/user-attachments/assets/e1130e11-911a-475e-84f6-b117440e4b1c)
 
 ### How to Run
 #### 1. Extract
