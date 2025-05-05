@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let readyForDialog = [];
     // DOM Elements
     const startButton = document.getElementById('start-button');
     const startScreen = document.getElementById('start-screen');
@@ -26,13 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Game screen elements
     const gameVideo = document.getElementById('game-video');
-    // Set the main front view video to the new file
-    if (gameVideo.src.includes('Generated File April 29, 2025 - 3_20PM.mp4') || gameVideo.getAttribute('src')?.includes('Generated File April 29, 2025 - 3_20PM.mp4')) {
-        gameVideo.src = 'MainVid.mp4';
-    } else if (!gameVideo.getAttribute('src')) {
-        // If no src is set, set it explicitly
-        gameVideo.src = 'MainVid.mp4';
-    }
     const lookBackVideo = document.getElementById('look-back-video');
     const statsContainer = document.getElementById('stats-container');
     const energyBar = document.getElementById('energy-bar');
@@ -50,6 +42,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const cliContainer = document.getElementById('cli-container');
     const cliText = document.getElementById('cli-text');
 
+    // Dialogue elements
+    const dialogueContainer = document.getElementById('dialogue-container');
+    const dialogueText = document.getElementById('dialogue-text');
+    const dialogueContinueIndicator = document.getElementById('dialogue-continue-indicator');
+    const dialogueBox = document.getElementById('dialogue-box');
+
+    // Get the Josh Hutcherson video
+    const joshWhistleVideo = document.getElementById('josh-whistle-video');
+
+    // Get new audio element
+    const bugattiSound = document.getElementById('bugatti-sound');
+
+    // Radio player elements
+    const radioContainer = document.getElementById('radio-container');
+    const radioSound = document.getElementById('radio-sound');
+    const radioSoundAlt = document.getElementById('radio-sound-alt');
+    const radioToggleButton = document.getElementById('radio-toggle-button');
+    const radioSwitchButton = document.getElementById('radio-switch-button');
+    const radioVolume = document.getElementById('radio-volume');
+    const radioDisplay = document.getElementById('radio-display');
+    const radioPlayer = document.getElementById('radio-player');
+    
     let accelerationHalfwayPoint = 0;
     accelerationSound.addEventListener('loadedmetadata', () => {
         accelerationHalfwayPoint = accelerationSound.duration / 2;
@@ -158,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to switch screens (simplifies music handling slightly)
     function showScreen(screenToShow) {
-        readyForDialog = [false];
         // Check fullscreen again when showing a screen
         checkFullscreen();
 
@@ -331,13 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function startGame() {
         console.log("Starting game...");
         showScreen(gameScreen);
-        
-        // Create all the boxes
-        fixedBox = createFixedBox();
-        fixedBox2 = createSecondFixedBox(); 
-        fixedBox3 = createThirdFixedBox(); // Create the third fixed box
-        draggableBox = createDraggableBox();
-        
+
         originalLookBackSrc = lookBackVideo.src; // Store original src
         const startRate = 0.1;
         const endRate = 1.0;
@@ -385,6 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gameStartTime = Date.now(); // Reset game timer to now
                 gameLoop();
                 scheduleAlienCar();
+                
+                // Start dialogue system immediately
+                startDialogueSequence();
             }
         }
 
@@ -402,12 +412,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Schedule the mirror event trigger 10 seconds after acceleration completes
         // (Which is when the game loop actually starts)
-
-        readyForDialog[0] = true;
-        createDialog("200 miles to nevada left . . .    Outrun the Alien Apocalypse to Area-51 Play games on your phone to stay sane. Brake-Check crazy driversㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  Check your mirrors, and survive . . .");
-
-        const accelerationDuration = 5000; // Match the duration used in accelerateVideo
+        const accelerationDuration = 5000;
         gameState.mirrorEventTimeout = setTimeout(triggerBrightFlashEvent, accelerationDuration + 10000);
+
+        // Show radio player
+        radioContainer.classList.remove('hidden');
     }
 
     // --- Mirror Event Logic ---
@@ -501,7 +510,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Look Back Start (Hover)
     function handleLookBackStart() {
+        // Stop all the videos that might be playing for performance
+        // (don't stop game-video since we're manipulating it specially)
+        blipVideo.pause();
+        joshWhistleVideo.pause();
+        
+        // Reset the src if needed (after alien car encounter)
+        if (lookBackVideo.src !== originalLookBackSrc && originalLookBackSrc) {
+            console.log("Resetting look back video source");
+            lookBackVideo.src = originalLookBackSrc;
+            lookBackVideo.load();
+            lookBackVideo.play();
+        } else if (!lookBackVideo.playing) {
+            lookBackVideo.play();
+        }
+        
         isLookingBack = true;
+        
+        // Hide radio when looking back
+        radioContainer.classList.add('hidden');
         
         // Make look back button wider when in rear view
         lookBackButton.style.width = '75%';
@@ -581,6 +608,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Start looping honk
             honkSound.currentTime = 0;
             honkSound.play().catch(e => console.error("Honk sound play failed:", e));
+            
+            // NEW: Play Bugatti sound
+            bugattiSound.currentTime = 0;
+            bugattiSound.play().catch(e => console.error("Bugatti sound play failed:", e));
         } else if (gameState.isAlienInMirror) {
             // Looking back during an active alien event - show alien again
             console.log("Looking back at alien again");
@@ -593,6 +624,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (honkSound.paused) {
                 honkSound.currentTime = 0;
                 honkSound.play().catch(e => console.error("Honk sound play failed:", e));
+            }
+            
+            // NEW: Play Bugatti sound if part of the first event
+            if (gameState.isBrightFlashEventActive && bugattiSound.paused) {
+                bugattiSound.currentTime = 0;
+                bugattiSound.play().catch(e => console.error("Bugatti sound play failed:", e));
             }
         } else {
             // Normal look back (no events active)
@@ -610,6 +647,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Always pause and hide the rear view video when moving away
         lookBackVideo.pause();
         lookBackVideo.style.display = 'none';
+        
+        // NEW: Stop Bugatti sound when looking forward again
+        bugattiSound.pause();
+        bugattiSound.currentTime = 0;
         
         // Show brake check button again (unless third event is active)
         if (!gameState.isThirdEventActive) {
@@ -677,6 +718,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 lookBackVideo.src = originalLookBackSrc;
                 lookBackVideo.load(); 
             }
+        }
+
+        // Show radio when looking forward again (if game is active)
+        if (gameScreen.style.display !== 'none' && !isLookingBack) {
+            radioContainer.classList.remove('hidden');
         }
     }
 
@@ -1100,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Trigger the third alien event (Markiplier beam)
+    // Function to trigger the third alien event (Markiplier beam)
     function triggerThirdEvent() {
         if (gameState.milesLeft <= 0) return; // Don't trigger if game over
         console.log("Triggering third event (Markiplier beam)...");
@@ -1138,8 +1184,11 @@ document.addEventListener('DOMContentLoaded', () => {
             markiplierBeamButton.classList.remove('hidden');
         }, 3000);
         
-        // Auto-resolve after 8 seconds with fade to white (unchanged timing)
-        gameState.thirdEventAutoResolveTimeout = setTimeout(resolveThirdEventWithFade, 8000);
+        // Auto-resolve after 8 seconds 
+        gameState.thirdEventAutoResolveTimeout = setTimeout(() => {
+            // Auto-trigger the Markiplier beam button click if not clicked already
+            markiplierBeamButton.click();
+        }, 8000);
     }
     
     // Play multiple overlapping creepy sounds
@@ -1157,18 +1206,130 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Resolve the third event with fade to white
-    function resolveThirdEventWithFade() {
-        console.log("Auto-resolving third event with white fade...");
+    // Dialogue System
+    const dialogues = [
+        "MISSION: Drive 200 miles to Nevada. BRAKE CHECK is essential to deter unusual followers.",
+        "Strange phenomena reported. Press BRAKE CHECK if you see headlights behind you."
+    ];
+
+    let currentDialogueIndex = 0;
+    let dialogueTypingInterval = null;
+    let isTyping = false;
+    let dialogueCharIndex = 0;
+
+    // Start the sequence of dialogues
+    function startDialogueSequence() {
+        dialogueContainer.classList.remove('hidden');
+        dialogueContainer.classList.add('visible');
+        showNextDialogue();
+    }
+
+    // Show the next dialogue in the sequence
+    function showNextDialogue() {
+        if (currentDialogueIndex >= dialogues.length) {
+            dialogueContainer.classList.add('hidden');
+            return;
+        }
         
-        // Start the white fade
-        whiteFadeOverlay.classList.remove('hidden');
-        whiteFadeOverlay.classList.add('fade-active');
+        // Reset for typing animation
+        dialogueText.textContent = "";
+        dialogueCharIndex = 0;
+        isTyping = true;
+        dialogueContinueIndicator.style.visibility = 'hidden';
         
-        // After the fade completes, reset everything
-        setTimeout(() => {
-            resetAfterThirdEvent();
-        }, 1500); // Match the CSS transition duration
+        // Start typing animation
+        typeDialogue(dialogues[currentDialogueIndex]);
+    }
+
+    // Type out dialogue text character by character
+    function typeDialogue(text) {
+        clearInterval(dialogueTypingInterval);
+        
+        dialogueTypingInterval = setInterval(() => {
+            if (dialogueCharIndex < text.length) {
+                dialogueText.textContent += text.charAt(dialogueCharIndex);
+                dialogueCharIndex++;
+            } else {
+                // Typing complete
+                clearInterval(dialogueTypingInterval);
+                isTyping = false;
+                dialogueContinueIndicator.style.visibility = 'visible';
+                
+                // Auto-advance to next dialogue after a delay
+                setTimeout(() => {
+                    currentDialogueIndex++;
+                    showNextDialogue();
+                }, 4000); // 4 seconds per dialogue
+            }
+        }, 20); // 20ms per character
+    }
+
+    // Skip typing and show full dialogue when clicked
+    dialogueBox.addEventListener('click', () => {
+        if (isTyping) {
+            // Skip to end of current dialogue
+            clearInterval(dialogueTypingInterval);
+            dialogueText.textContent = dialogues[currentDialogueIndex];
+            isTyping = false;
+            dialogueContinueIndicator.style.visibility = 'visible';
+        } else {
+            // If not typing, advance to next dialogue
+            currentDialogueIndex++;
+            showNextDialogue();
+        }
+    });
+
+    console.log('Game script loaded. Waiting for start.');
+
+    // Restore all important functions
+    
+    // Function to play Josh Hutcherson whistle video
+    function playJoshWhistleVideo() {
+        console.log("Playing Josh whistle video...");
+        
+        // Show and play the Josh video immediately
+        joshWhistleVideo.style.display = 'block';
+        
+        // Try to play the video
+        joshWhistleVideo.play().then(() => {
+            console.log("Josh whistle video playing");
+            
+            // When video ends, transition directly to CLI terminal
+            joshWhistleVideo.onended = () => {
+                console.log("Video ended, showing CLI directly");
+                joshWhistleVideo.style.display = 'none';
+                
+                // Hide white overlay and game screen elements
+                whiteFadeOverlay.classList.add('hidden');
+                gameVideo.pause();
+                
+                // Skip all intermediate steps and directly show CLI
+                showCLITerminal();
+            };
+        }).catch(e => {
+            console.error("Josh whistle video failed to play:", e);
+            // Fallback if video fails - go to CLI directly
+            joshWhistleVideo.style.display = 'none';
+            showCLITerminal();
+        });
+    }
+    
+    // New function to directly show CLI terminal
+    function showCLITerminal() {
+        // Stop all sounds
+        stopAllSounds();
+        
+        // Hide game elements
+        whiteFadeOverlay.classList.add('hidden');
+        gameState.isThirdEventActive = false;
+        markiplierBeamButton.classList.add('hidden');
+        
+        // Display CLI container immediately
+        cliContainer.classList.remove('hidden');
+        cliContainer.classList.add('visible');
+        
+        // Start typing animation immediately
+        typeCliText();
     }
     
     // Reset everything after the third event
@@ -1195,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
     
-    // Function to stop all game sounds
+    // Function to stop all game sounds - update to include the Bugatti sound
     function stopAllSounds() {
         // Stop all audio elements
         startMusic.pause();
@@ -1222,11 +1383,19 @@ document.addEventListener('DOMContentLoaded', () => {
         markiplierScreechSound.pause();
         markiplierScreechSound.currentTime = 0;
         
+        // NEW: Stop Bugatti sound
+        bugattiSound.pause();
+        bugattiSound.currentTime = 0;
+        
         // Also stop any dynamically created audio elements that might be playing
         document.querySelectorAll('audio').forEach(audio => {
             audio.pause();
             audio.currentTime = 0;
         });
+        
+        // Stop radio sound too
+        radioSound.pause();
+        radioSoundAlt.pause();
         
         console.log("All sounds stopped");
     }
@@ -1316,465 +1485,117 @@ document.addEventListener('DOMContentLoaded', () => {
         
         console.log("Markiplier beam activated!");
         
-        // Play the screech sound
+        // Stop radio sounds when Markiplier beam is activated
+        radioSound.pause();
+        radioSoundAlt.pause();
+        radioToggleButton.textContent = 'RADIO ON';
+        radioToggleButton.classList.remove('active');
+        radioPlayer.classList.remove('radio-active');
+        
+        // Start the white fade
+        whiteFadeOverlay.classList.remove('hidden');
+        whiteFadeOverlay.classList.add('fade-active');
+        
+        // Play the screech sound, then play video when sound ends
         markiplierScreechSound.currentTime = 0;
-        markiplierScreechSound.play().catch(e => console.error("Markiplier screech sound play failed:", e));
+        
+        // Set up the onended event before playing
+        markiplierScreechSound.onended = () => {
+            console.log("Screech sound finished, now playing xfrt.mp4");
+            // Play Josh video after screech sound finishes
+            playJoshWhistleVideo();
+        };
+        
+        // Now play the sound
+        markiplierScreechSound.play().catch(e => {
+            console.error("Markiplier screech sound play failed:", e);
+            // If sound fails, just play the video
+            playJoshWhistleVideo();
+        });
         
         // Clear the auto-resolve timeout so it doesn't trigger later
         clearTimeout(gameState.thirdEventAutoResolveTimeout);
-        
-        // Immediately resolve with white fade
-        resolveThirdEventWithFade();
     });
 
-    function createDialog(message) {
-        if (!readyForDialog[0]) return;
-    
-        const dialog = document.getElementById('dialog');
-        // const videoPlayerScreen = document.getElementById('video-player');
-        const gameScreen = document.getElementById('game-screen');
-    
-        // videoPlayerScreen.style.display = 'none';
-        dialog.style.display = 'inline-block';
-    
-        let messageArray = message.split(" ");
-        let currentText = "";
-        let index = 0;
-    
-        function showNextWord() {
-            let waitingForClick = false;
-            if (index >= messageArray.length) {
-                index++;
-                dialog.onclick = () => {
-                    if (index >= messageArray.length) {
-                        dialog.style.display = 'none';
-                    }
-                };
-                return;
-            }
-            if ((currentText + messageArray[index] + " ").length >= 40) {   
-                currentText = "";
-                waitingForClick = true
-                
-                dialog.onclick = () => {
-                    if (index >= messageArray.length) {
-                        dialog.style.display = 'none';
-                    }
-                    dialog.onclick = null; // Remove this listener after it's used
-                    currentText = "";
-                    if (index >= messageArray.length) return;
-                    showNextWord(); // Resume after click
-                };
-                return;
-            }
-            currentText += messageArray[index] + " ";
-            dialog.innerHTML = `<p>${currentText}</p>`;
-            index++;
-    
-            if (!waitingForClick) {
-                setTimeout(showNextWord, 100);
-            }
-        }
-    
-        showNextWord();
-    }
-
-    console.log('Game script loaded. Waiting for start.');
-
-    // Create a fixed transparent box for the front view
-    function createFixedBox() {
-        // Create image element that will be toggled
-        const toggleImage = document.createElement('img');
-        toggleImage.id = 'toggle-image';
-        toggleImage.src = 'image-removebg-preview.png';
-        toggleImage.style.position = 'absolute';
-        toggleImage.style.left = '50%';
-        toggleImage.style.top = '50%';
-        toggleImage.style.transform = 'translate(-50%, -50%)';
-        toggleImage.style.maxWidth = '80%';
-        toggleImage.style.maxHeight = '80%';
-        toggleImage.style.zIndex = '999';
-        toggleImage.style.display = 'none'; // Initially hidden
-        toggleImage.style.pointerEvents = 'none'; // Don't block clicks
+    // Radio player functionality
+    function initRadioPlayer() {
+        let currentStation = 'A'; // Start with station A
+        let isPlaying = false;
         
-        // Add image to game screen
-        gameScreen.appendChild(toggleImage);
+        // Set initial volume for both stations
+        radioSound.volume = radioVolume.value / 100;
+        radioSoundAlt.volume = radioVolume.value / 100;
         
-        // Create the box element
-        const box = document.createElement('div');
-        box.id = 'fixed-box';
-        box.style.position = 'absolute';
-        box.style.width = '310px';
-        box.style.height = '110px';
-        box.style.left = '1140px';
-        box.style.top = '443px';
-        box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; // Very slight background for visibility
-        box.style.border = '2px solid #00ff00';
-        box.style.zIndex = '1000';
-        box.style.display = 'flex';
-        box.style.flexDirection = 'column';
-        box.style.justifyContent = 'center';
-        box.style.alignItems = 'center';
-        box.style.color = '#00ff00';
-        box.style.fontFamily = 'monospace';
-        box.style.fontSize = '12px';
-        box.style.userSelect = 'none';
-        box.style.pointerEvents = 'auto'; // Make it clickable
-        box.style.cursor = 'pointer'; // Show pointer cursor on hover
-        
-        // Create the info display
-        const infoDisplay = document.createElement('div');
-        infoDisplay.id = 'box-info';
-        infoDisplay.innerHTML = `
-            Size: 310x110<br>
-            Pos: 1140,443
-        `;
-        box.appendChild(infoDisplay);
-        
-        // Track toggle state
-        let imageVisible = false;
-        // Track original and alternate sizes
-        const originalSize = { width: '310px', height: '110px', left: '1140px', top: '443px' };
-        const alternateSize = { width: '383px', height: '23px', left: '55px', top: '712px' };
-        let isAlternateSize = false;
-        
-        // Add click event
-        box.addEventListener('click', () => {
-            console.log('Box clicked!');
+        // Toggle radio on/off
+        radioToggleButton.addEventListener('click', () => {
+            const currentRadio = currentStation === 'A' ? radioSound : radioSoundAlt;
             
-            // Toggle image visibility
-            imageVisible = !imageVisible;
-            toggleImage.style.display = imageVisible ? 'block' : 'none';
-            
-            // Toggle box size and position
-            isAlternateSize = !isAlternateSize;
-            if (isAlternateSize) {
-                box.style.width = alternateSize.width;
-                box.style.height = alternateSize.height;
-                box.style.left = alternateSize.left;
-                box.style.top = alternateSize.top;
+            if (currentRadio.paused) {
+                currentRadio.play().then(() => {
+                    isPlaying = true;
+                    radioToggleButton.textContent = 'RADIO OFF';
+                    radioToggleButton.classList.add('active');
+                    radioPlayer.classList.add('radio-active');
+                }).catch(error => {
+                    console.error('Radio play failed:', error);
+                });
             } else {
-                box.style.width = originalSize.width;
-                box.style.height = originalSize.height;
-                box.style.left = originalSize.left;
-                box.style.top = originalSize.top;
+                currentRadio.pause();
+                isPlaying = false;
+                radioToggleButton.textContent = 'RADIO ON';
+                radioToggleButton.classList.remove('active');
+                radioPlayer.classList.remove('radio-active');
             }
-            
-            // Update the info display
-            infoDisplay.innerHTML = isAlternateSize ? 
-                `Size: 383x23<br>Pos: 55,712` : 
-                `Size: 310x110<br>Pos: 1140,443`;
-            
-            // Flash the box as visual feedback
-            box.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
-            setTimeout(() => {
-                box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-            }, 200);
         });
         
-        // Add the box to the game screen
-        gameScreen.appendChild(box);
-        
-        // Function to show/hide box based on conditions
-        function updateBoxVisibility() {
-            // Only show when in front view (not looking back or during special events)
-            if (isLookingBack || gameState.isThirdEventActive) {
-                box.style.display = 'none';
-                // Also hide the image when not in front view
-                toggleImage.style.display = 'none';
+        // Switch between radio stations
+        radioSwitchButton.addEventListener('click', () => {
+            // Add switching visual effect
+            radioContainer.classList.add('switching');
+            
+            // First pause the current station
+            if (currentStation === 'A') {
+                radioSound.pause();
+                currentStation = 'B';
+                radioDisplay.textContent = 'STATION B';
+                
+                // Play the new station if radio was on
+                if (isPlaying) {
+                    setTimeout(() => {
+                        radioSoundAlt.play().catch(error => {
+                            console.error('Radio switch failed:', error);
+                        });
+                    }, 300);
+                }
             } else {
-                box.style.display = 'flex';
-                // Only show the image if it was previously visible and we're returning to front view
-                if (imageVisible) {
-                    toggleImage.style.display = 'block';
+                radioSoundAlt.pause();
+                currentStation = 'A';
+                radioDisplay.textContent = 'STATION A';
+                
+                // Play the new station if radio was on
+                if (isPlaying) {
+                    setTimeout(() => {
+                        radioSound.play().catch(error => {
+                            console.error('Radio switch failed:', error);
+                        });
+                    }, 300);
                 }
             }
-        }
-        
-        // Set up visibility checks
-        setInterval(updateBoxVisibility, 100);
-        
-        // Return the box reference
-        return box;
-    }
-    
-    // Variable to store box reference
-    let fixedBox;
-    
-    // Create a draggable and resizable box
-    function createDraggableBox() {
-        // Create the box element
-        const box = document.createElement('div');
-        box.id = 'draggable-box';
-        box.style.position = 'absolute';
-        box.style.width = '150px';
-        box.style.height = '150px';
-        box.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-        box.style.border = '2px solid #00ff00';
-        box.style.zIndex = '1000';
-        box.style.cursor = 'move';
-        box.style.display = 'flex';
-        box.style.flexDirection = 'column';
-        box.style.justifyContent = 'center';
-        box.style.alignItems = 'center';
-        box.style.color = '#00ff00';
-        box.style.fontFamily = 'monospace';
-        box.style.fontSize = '12px';
-        box.style.userSelect = 'none';
-        
-        // Create the info display
-        const infoDisplay = document.createElement('div');
-        infoDisplay.id = 'box-info';
-        box.appendChild(infoDisplay);
-        
-        // Create resize handle
-        const resizeHandle = document.createElement('div');
-        resizeHandle.style.position = 'absolute';
-        resizeHandle.style.width = '10px';
-        resizeHandle.style.height = '10px';
-        resizeHandle.style.right = '0';
-        resizeHandle.style.bottom = '0';
-        resizeHandle.style.backgroundColor = '#00ff00';
-        resizeHandle.style.cursor = 'nwse-resize';
-        box.appendChild(resizeHandle);
-        
-        // Center the box in the game screen
-        const centerBox = () => {
-            const gameScreenRect = gameScreen.getBoundingClientRect();
-            box.style.left = (gameScreenRect.width / 2 - 75) + 'px';
-            box.style.top = (gameScreenRect.height / 2 - 75) + 'px';
-            updateInfoDisplay();
-        };
-        
-        // Add the box to the game screen
-        gameScreen.appendChild(box);
-        centerBox();
-        
-        // Variables for dragging
-        let isDragging = false;
-        let isResizing = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let boxStartX = 0;
-        let boxStartY = 0;
-        let boxStartWidth = 150;
-        let boxStartHeight = 150;
-        
-        // Update info display
-        function updateInfoDisplay() {
-            const boxRect = box.getBoundingClientRect();
-            const gameScreenRect = gameScreen.getBoundingClientRect();
-            const relX = boxRect.left - gameScreenRect.left;
-            const relY = boxRect.top - gameScreenRect.top;
             
-            infoDisplay.innerHTML = `
-                Size: ${Math.round(boxRect.width)}x${Math.round(boxRect.height)}<br>
-                Pos: ${Math.round(relX)},${Math.round(relY)}
-            `;
-        }
-        
-        // Event listeners for dragging
-        box.addEventListener('mousedown', (e) => {
-            if (e.target === resizeHandle) {
-                // Resize logic
-                isResizing = true;
-                boxStartWidth = box.offsetWidth;
-                boxStartHeight = box.offsetHeight;
-            } else {
-                // Drag logic
-                isDragging = true;
-                box.style.cursor = 'grabbing';
-            }
-            
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            boxStartX = box.offsetLeft;
-            boxStartY = box.offsetTop;
-            
-            e.preventDefault();
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const dx = e.clientX - dragStartX;
-                const dy = e.clientY - dragStartY;
-                
-                box.style.left = (boxStartX + dx) + 'px';
-                box.style.top = (boxStartY + dy) + 'px';
-                
-                updateInfoDisplay();
-            } else if (isResizing) {
-                const dx = e.clientX - dragStartX;
-                const dy = e.clientY - dragStartY;
-                
-                const newWidth = Math.max(50, boxStartWidth + dx);
-                const newHeight = Math.max(50, boxStartHeight + dy);
-                
-                box.style.width = newWidth + 'px';
-                box.style.height = newHeight + 'px';
-                
-                updateInfoDisplay();
-            }
-        });
-        
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            isResizing = false;
-            box.style.cursor = 'move';
-        });
-        
-        // Update on window resize
-        window.addEventListener('resize', updateInfoDisplay);
-        
-        // Function to show/hide the box based on conditions
-        function updateBoxVisibility() {
-            // Only show when in front view (not looking back or during special events)
-            if (isLookingBack || gameState.isThirdEventActive) {
-                box.style.display = 'none';
-            } else {
-                box.style.display = 'flex';
-            }
-        }
-        
-        // Set up visibility checks
-        setInterval(updateBoxVisibility, 100);
-        
-        // Return the box for reference
-        return box;
-    }
-    
-    // Variable to store box reference
-    let draggableBox;
-
-    // Create a second fixed transparent box for the front view
-    function createSecondFixedBox() {
-        // Create the box element
-        const box = document.createElement('div');
-        box.id = 'fixed-box-2';
-        box.style.position = 'absolute';
-        box.style.width = '142px';
-        box.style.height = '89px';
-        box.style.left = '1181px';
-        box.style.top = '991px';
-        box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; // Very slight background for visibility
-        box.style.border = '2px solid #00ff00';
-        box.style.zIndex = '1000';
-        box.style.display = 'flex';
-        box.style.flexDirection = 'column';
-        box.style.justifyContent = 'center';
-        box.style.alignItems = 'center';
-        box.style.color = '#00ff00';
-        box.style.fontFamily = 'monospace';
-        box.style.fontSize = '12px';
-        box.style.userSelect = 'none';
-        box.style.pointerEvents = 'auto'; // Make it clickable
-        box.style.cursor = 'pointer'; // Show pointer cursor on hover
-        
-        // Create the info display
-        const infoDisplay = document.createElement('div');
-        infoDisplay.id = 'box-info-2';
-        infoDisplay.innerHTML = `
-            Size: 142x89<br>
-            Pos: 1181,991
-        `;
-        box.appendChild(infoDisplay);
-        
-        // Add click event
-        box.addEventListener('click', () => {
-            console.log('Box 2 clicked!');
-            // Flash the box as visual feedback
-            box.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
+            // Remove switching effect after a delay
             setTimeout(() => {
-                box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-            }, 200);
+                radioContainer.classList.remove('switching');
+            }, 800);
         });
         
-        // Add the box to the game screen
-        gameScreen.appendChild(box);
-        
-        // Function to show/hide box based on conditions
-        function updateBoxVisibility() {
-            // Only show when in front view (not looking back or during special events)
-            if (isLookingBack || gameState.isThirdEventActive) {
-                box.style.display = 'none';
-            } else {
-                box.style.display = 'flex';
-            }
-        }
-        
-        // Set up visibility checks
-        setInterval(updateBoxVisibility, 100);
-        
-        // Return the box reference
-        return box;
-    }
-
-    // Variable to store the second box reference
-    let fixedBox2;
-
-    // Create a third fixed transparent box for the front view
-    function createThirdFixedBox() {
-        // Create the box element
-        const box = document.createElement('div');
-        box.id = 'fixed-box-3';
-        box.style.position = 'absolute';
-        box.style.width = '425px';
-        box.style.height = '75px';
-        box.style.left = '1090px';
-        box.style.top = '877px';
-        box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; // Very slight background for visibility
-        box.style.border = '2px solid #00ff00';
-        box.style.zIndex = '1000';
-        box.style.display = 'flex';
-        box.style.flexDirection = 'column';
-        box.style.justifyContent = 'center';
-        box.style.alignItems = 'center';
-        box.style.color = '#00ff00';
-        box.style.fontFamily = 'monospace';
-        box.style.fontSize = '12px';
-        box.style.userSelect = 'none';
-        box.style.pointerEvents = 'auto'; // Make it clickable
-        box.style.cursor = 'pointer'; // Show pointer cursor on hover
-        
-        // Create the info display
-        const infoDisplay = document.createElement('div');
-        infoDisplay.id = 'box-info-3';
-        infoDisplay.innerHTML = `
-            Size: 425x75<br>
-            Pos: 1090,877
-        `;
-        box.appendChild(infoDisplay);
-        
-        // Add click event
-        box.addEventListener('click', () => {
-            console.log('Box 3 clicked!');
-            // Flash the box as visual feedback
-            box.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
-            setTimeout(() => {
-                box.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-            }, 200);
+        // Handle volume changes for both stations
+        radioVolume.addEventListener('input', () => {
+            const newVolume = radioVolume.value / 100;
+            radioSound.volume = newVolume;
+            radioSoundAlt.volume = newVolume;
         });
-        
-        // Add the box to the game screen
-        gameScreen.appendChild(box);
-        
-        // Function to show/hide box based on conditions
-        function updateBoxVisibility() {
-            // Only show when in front view (not looking back or during special events)
-            if (isLookingBack || gameState.isThirdEventActive) {
-                box.style.display = 'none';
-            } else {
-                box.style.display = 'flex';
-            }
-        }
-        
-        // Set up visibility checks
-        setInterval(updateBoxVisibility, 100);
-        
-        // Return the box reference
-        return box;
     }
-    
-    // Variable to store the third box reference
-    let fixedBox3;
+
+    // Initialize radio player
+    initRadioPlayer();
 }); 

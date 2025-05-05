@@ -45,26 +45,6 @@ body {
    animation: flicker 10s infinite both; /* Add flicker to title */
 }
 
-#dialog {
-    display: none;
-    position: absolute;
-    bottom: 80px;
-    left: 60px;
-    font-size: 2.2em;
-    color: #0f0;
-    cursor: pointer;
-    font-family: inherit;
-    text-shadow: 0 0 8px #0f0;
-    transition: color 0.1s ease-in-out, text-shadow 0.1s ease-in-out;
-    width: 889.76px;
-    height: 100px; /* Added height */
-    padding: 16px;
-    background-color: rgba(0, 0, 0, 0.523);
-    border: 2px solid rgba(0, 255, 0, 0.53);
-    border-radius: 10px;
-    z-index: 1000;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
 
 #start-button {
     position: absolute;
@@ -1161,4 +1141,260 @@ body::after {
     box-shadow: 0 0 10px #0f0;
     animation: progress-bar 3s linear;
     width: 0;
+}
+
+/* Dialogue Box Styles */
+#dialogue-container {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 350px;
+    z-index: 900;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+}
+
+#dialogue-box {
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 2px solid #0f0;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+    padding: 15px;
+    color: #0f0;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    max-height: 120px; /* Reduced from 150px */
+    min-height: 90px; /* Added min-height to prevent box from being too small */
+    overflow-y: auto;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+#dialogue-text {
+    margin-bottom: 10px;
+}
+
+#dialogue-nav {
+    display: flex;
+    justify-content: flex-end;
+    height: 20px;
+}
+
+#dialogue-continue-indicator {
+    font-size: 14px;
+    animation: bounce 0.8s infinite alternate;
+}
+
+@keyframes bounce {
+    from { transform: translateY(0px); }
+    to { transform: translateY(5px); }
+}
+
+#dialogue-container.visible {
+    opacity: 1;
+    display: block;
+}
+
+#dialogue-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+}
+
+/* Enhanced Radio Player Styles */
+#radio-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    pointer-events: auto;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#radio-player {
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 2px solid #0f0;
+    border-radius: 8px;
+    padding: 12px;
+    color: #0f0;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    gap: 10px;
+    backdrop-filter: blur(5px);
+}
+
+#radio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.4);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+#radio-display {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    text-shadow: 0 0 8px #0f0;
+    letter-spacing: 1px;
+    flex-grow: 1;
+}
+
+#radio-signal {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+#radio-signal::before {
+    content: '';
+    height: 6px;
+    width: 3px;
+    background-color: #0f0;
+    box-shadow: 0 0 5px #0f0;
+}
+
+#radio-signal::after {
+    content: '';
+    height: 9px;
+    width: 3px;
+    background-color: #0f0;
+    box-shadow: 0 0 5px #0f0;
+}
+
+#radio-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#radio-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+#radio-toggle-button, #radio-switch-button {
+    flex: 1;
+    background-color: rgba(0, 40, 0, 0.5);
+    border: 1px solid #0f0;
+    color: #0f0;
+    padding: 8px 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    text-shadow: 0 0 5px #0f0;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+#radio-toggle-button:hover, #radio-switch-button:hover {
+    background-color: rgba(0, 255, 0, 0.2);
+    box-shadow: 0 0 10px #0f0;
+}
+
+#radio-toggle-button.active {
+    background-color: rgba(0, 255, 0, 0.3);
+    text-shadow: 0 0 8px #0f0;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.6) inset;
+}
+
+#radio-switch-button {
+    background-color: rgba(0, 60, 0, 0.5);
+}
+
+#radio-switch-button:active {
+    transform: scale(0.95);
+}
+
+#radio-volume-container {
+    width: 100%;
+    padding: 5px 0;
+    position: relative;
+}
+
+#radio-volume-container::before {
+    content: '0';
+    position: absolute;
+    left: 0;
+    bottom: -12px;
+    font-size: 10px;
+    color: rgba(0, 255, 0, 0.7);
+}
+
+#radio-volume-container::after {
+    content: '100';
+    position: absolute;
+    right: 0;
+    bottom: -12px;
+    font-size: 10px;
+    color: rgba(0, 255, 0, 0.7);
+}
+
+#radio-volume {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: linear-gradient(to right, #0f0 0%, #0f0 70%, #043 100%);
+    outline: none;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5) inset;
+}
+
+#radio-volume:hover {
+    opacity: 1;
+}
+
+#radio-volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(#0f0, #063);
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+}
+
+#radio-volume::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(#0f0, #063);
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+}
+
+.radio-active #radio-signal::before {
+    animation: signalBounce 0.5s infinite alternate;
+}
+
+.radio-active #radio-signal::after {
+    animation: signalBounce 0.5s 0.2s infinite alternate;
+}
+
+@keyframes signalBounce {
+    0% { height: 4px; }
+    33% { height: 12px; }
+    66% { height: 7px; }
+    100% { height: 10px; }
+}
+
+#radio-container.switching #radio-display {
+    animation: radioSwitching 0.3s infinite alternate;
+}
+
+@keyframes radioSwitching {
+    0% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+@media (hover: hover) {
+    #radio-container:hover {
+        transform: scale(1.03);
+    }
 }

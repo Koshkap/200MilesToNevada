@@ -103,7 +103,7 @@
   </div>
   <div id="game-container">
     <canvas id="gameCanvas" width="768" height="1152"></canvas>
-    <div id="textbox">What a nice rest I had</div>
+    <div id="textbox">What a nice rest I had *click on the newspaper*</div>
     <div id="newspaper-description-box">Description will appear here</div>
     <div id="close-instruction">press ESC to stop reading</div>
   </div>
@@ -135,8 +135,8 @@
     const newspaperDescriptions = {
       newspaper:  "Local reports describe monstrous sightings near the forest: villagers report glowing eyes and hulking shapes moving between the trees. Authorities dismiss them as hoaxes, but fresh footprints and shredded foliage suggest something far more sinister lurking in the shadows.",
       newspaper_2:"A woman was discovered inside her home, horrifically eaten from the inside out. There were no signs of forced entry—only strange claw marks and pools of darkened blood. Rumors whisper of a cursed entity stalking the night.",
-      newspaper_3:"At dusk, military and police units engaged an unrecognizable creature at the forest’s edge. Uniforms scorched and equipment melted on contact. An immediate press blackout was imposed; locals fear an insider cover-up of horrific experiments gone wrong.",
-      newspaper_4:"A final chilling message was scrawled in mud (what could this mean): 'Don't trust anyone—but especially not the glow.' Some believe it’s a warning, others think it’s a trap set by the very thing that haunts the woods."
+      newspaper_3:"At dusk, military and police units engaged an unrecognizable creature at the forest's edge. Uniforms scorched and equipment melted on contact. An immediate press blackout was imposed; locals fear an insider cover-up of horrific experiments gone wrong.",
+      newspaper_4:"A final chilling message was scrawled in mud (what could this mean): 'Don't trust anyone—but especially not the glow.' Some believe it's a warning, others think it's a trap set by the very thing that haunts the woods."
     };
 
     let images = {};
@@ -203,31 +203,30 @@
     }
 
     function updatePlayer() {
-  if (isReadingNewspaper) return;
-  const s = player.speed;
-  if (player.inCar) player.speed = 3; // or higher
-  if (!player.inCar) {
-    if (keys['w']) player.y -= s;
-    if (keys['s']) player.y += s;
-    if (keys['a']) player.x -= s;
-    if (keys['d']) player.x += s;
-    player.x = Math.max(player.w / 2, Math.min(canvas.width - player.w / 2, player.x));
-    player.y = Math.max(player.h / 2, Math.min(canvas.height - player.h / 2, player.y));
-    const dx = player.x - car.x, dy = player.y - car.y;
-    if (Math.hypot(dx, dy) < 60) {
-      player.inCar = true;
-      car.visible = false;
-      enemy = { x: player.x, y: player.y + 400 };
-      textbox.innerText = "What is that behind me?";
+      if (isReadingNewspaper) return;
+      const s = player.speed;
+      if (player.inCar) player.speed = 3; // or higher
+      if (!player.inCar) {
+        if (keys['w']) player.y -= s;
+        if (keys['s']) player.y += s;
+        if (keys['a']) player.x -= s;
+        if (keys['d']) player.x += s;
+        player.x = Math.max(player.w / 2, Math.min(canvas.width - player.w / 2, player.x));
+        player.y = Math.max(player.h / 2, Math.min(canvas.height - player.h / 2, player.y));
+        const dx = player.x - car.x, dy = player.y - car.y;
+        if (Math.hypot(dx, dy) < 60) {
+          player.inCar = true;
+          car.visible = false;
+          enemy = { x: player.x, y: player.y + 400 };
+          textbox.innerText = "What is that behind me?";
+        }
+      } else {
+        // Auto-move up
+        player.y -= s;
+        player.x = car.x;
+        if (player.y < car.h / 2) window.location.href = "Level2.html";
+      }
     }
-  } else {
-    // Auto-move up
-    player.y -= s;
-    player.x = car.x;
-    if (player.y < car.h / 2) window.location.href = "../index.html";
-  }
-}
-
 
     function updateEnemy() {
       if (!enemy || isReadingNewspaper) return;
