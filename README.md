@@ -1,6 +1,6 @@
 1. Extract
 ![image](https://github.com/user-attachments/assets/fc21e911-57f4-48ae-abbd-8f57be6e073b)
- Open folder 2MTN
+2. Open folder 2MTN
 ![image](https://github.com/user-attachments/assets/d76f9d6b-d537-4284-b7fc-ecbcf3f95769)
 3. Open index.html in your browser
 ![image](https://github.com/user-attachments/assets/9bf17020-b513-4fbb-8e29-c2c0afd5bb7f)
