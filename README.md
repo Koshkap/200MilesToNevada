@@ -11,6 +11,10 @@
 #### 200 Miles to Nevada is a driving horror game.
 ### Look back and brake check other cars on the road and some other stuff...
 ![image](https://github.com/user-attachments/assets/e2a818dd-51dd-4bcc-ad8e-faf8372a6882)
+
+## This is an auditory experience
+![image](https://github.com/user-attachments/assets/128d5257-51e1-4335-9b9f-968a9818bc0f)
+
 ## Pre-Alpha
 
 ## Don't play if you're sensitive to flashing lights!
